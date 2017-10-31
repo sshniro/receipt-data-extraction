@@ -3,9 +3,11 @@
  */
 var fs = require("fs");
 var deepcopy = require("deepcopy");
+var inside = require('point-in-polygon');
 var content = fs.readFileSync("saint.json");
 var textJson = JSON.parse(content);
 // generateHistogram(textJson);
+
 mergeWords(textJson);
 
 function getLines(mergedArray, data) {
@@ -13,7 +15,29 @@ function getLines(mergedArray, data) {
 
 }
 
+function getYMax(data) {
+    let v = data.textAnnotations[0].boundingPoly.vertices;
+    let yArray = [];
+    for(let i=0; i <4; i++){
+        yArray.push(v[i]['y']);
+    }
+    return Math.max.apply(null, yArray);
+}
+
+function invertAxis(data, yMax) {
+    for(var i=1; i < data.textAnnotations.length; i++ ){
+        let v = data.textAnnotations[i].boundingPoly.vertices;
+        let yArray = [];
+        for(let j=0; j <4; j++){
+            v[j]['y'] = (yMax - v[j]['y']);
+        }
+    }
+    return data;
+}
+
 function mergeWords(data) {
+    var yMax = getYMax(textJson, yMax);
+    data = invertAxis(data, yMax);
     var lines = data.textAnnotations[0].description.split('\n');
     let rawText = deepcopy(data.textAnnotations);
 
@@ -36,8 +60,7 @@ function mergeWords(data) {
     let line2 = getRectangle(arr);
 
     let rect = createRectCoordinates(line1, line2);
-    pointInRectangle({x: 40, y: 20}, rect);
-    // gradient * (mergedArray[0].boundingPoly.vertices[0].x) =
+    let results = inside([1998, 230], rect);
 
     console.log(mergedArray);
 
@@ -55,8 +78,8 @@ function getRectangle(v) {
     if(gradient === 0) {
         // extend the line
     }else{
-        yMin = (v[0].y) + (gradient * (v[0].x - xThreshMin));
-        yMax = -(gradient * (xThreshMax - v[0].x)) + (v[0].y);
+        yMin = (v[0].y) - (gradient * (v[0].x - xThreshMin));
+        yMax = (v[0].y) - (gradient * (xThreshMax - v[0].x));
     }
     return {xMin : xThreshMin, xMax : xThreshMax, yMin: yMin, yMax: yMax};
 
@@ -116,6 +139,7 @@ function createRectCoordinates(line1, line2) {
         C: {x: line2.xMin, y: line2.yMin},
         D: {x: line2.xMax, y: line2.yMax}
     };
+    r = [[line1.xMin, line1.yMin], [line1.xMax, line1.yMax], [line2.xMax, line2.yMax],[line2.xMin, line2.yMin]];
     return r;
 }
 
