@@ -76,12 +76,31 @@ function mergeWords(data) {
 
     let rect = createRectCoordinates(line1, line2);
     // let results = inside([1998, 230], rect);
+    getBigbb(mergedArray);
 
     let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
     console.log('test')
 }
 
-function getRectangle(v) {
+function getBigbb(mergedArray) {
+
+    for(let i=0; i< mergedArray.length; i++) {
+        let arr = [];
+        arr.push(mergedArray[i].boundingPoly.vertices[0]);
+        arr.push(mergedArray[i].boundingPoly.vertices[1]);
+        let line1 = getRectangle(arr);
+
+        arr = [];
+        arr.push(mergedArray[i].boundingPoly.vertices[3]);
+        arr.push(mergedArray[i].boundingPoly.vertices[2]);
+        let line2 = getRectangle(arr);
+
+        mergedArray[i]['bigbb'] = createRectCoordinates(line1, line2);
+    }
+
+}
+
+function getRectangle(v, isRoundValues) {
     let yDiff = (-v[1].y - (-v[0].y));
     let xDiff = (v[1].x - v[0].x);
 
@@ -90,11 +109,19 @@ function getRectangle(v) {
     let xThreshMin = 1;
     let xThreshMax = 1000;
 
+    let yMin;
+    let yMax;
     if(gradient === 0) {
         // extend the line
+        yMin = v[0].y;
+        yMax = v[0].y;
     }else{
         yMin = (v[0].y) - (gradient * (v[0].x - xThreshMin));
         yMax = (v[0].y) - (gradient * (xThreshMax - v[0].x));
+    }
+    if(isRoundValues) {
+        yMin = Math.round(yMin);
+        yMax = Math.round(yMax);
     }
     return {xMin : xThreshMin, xMax : xThreshMax, yMin: yMin, yMax: yMax};
 }
