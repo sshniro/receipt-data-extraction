@@ -29,6 +29,27 @@ function invertAxis(data, yMax) {
     return data;
 }
 
+function getLines(mergedWordsArray) {
+    let lines = [];
+    for(let i=0; i< mergedWordsArray.length; i++) {
+        lines.push(mergedWordsArray[i]['description']);
+    }
+    return lines;
+}
+
+function regexToGetDescriptionAndPrice(lines) {
+    let lineItemList = [];
+    let lineItem = {desc: "", price: ""};
+    for(let i=0; i < lines.length; i++) {
+        let line = lines[i];
+        let match = /(.+)(£|€|\$)(\d+\.\d{2})/.exec(line);
+        if(match !== null) {
+            lineItemList.push({desc: match[1], price: match[3]})
+        }
+    }
+    return lineItemList;
+}
+
 function mergeWords(data) {
     var yMax = getYMax(textJson, yMax);
     data = invertAxis(data, yMax);
@@ -54,13 +75,10 @@ function mergeWords(data) {
     let line2 = getRectangle(arr);
 
     let rect = createRectCoordinates(line1, line2);
-    let results = inside([1998, 230], rect);
+    // let results = inside([1998, 230], rect);
 
-    console.log(mergedArray);
-}
-
-function matchWords(rect, data) {
-
+    let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
+    console.log('test')
 }
 
 function getRectangle(v) {
@@ -124,5 +142,9 @@ function getMergedLines(lines,rawText) {
     }
     return mergedArray;
 }
+
+// (?<description>.+)(?<currency>£|€|\$)(?<amount>\d+\.\d{2})
+// /(?:.+)(?:£|€|\$)(?:\d+\.\d{2})/
+/(.+)(£|€|\$)(\d+\.\d{2})/.exec('format  $12.00');
 
 

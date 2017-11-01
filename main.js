@@ -1,15 +1,19 @@
 var inside = require('point-in-polygon');
-var polygon = [ [ 1, 1430 ], [ 1000, 1413],
-    [ 1000, 1367], [ 1, 1383 ] ];
+var polygon = [[ 1, 1430], [ 1000, 1413],[ 1000, 1367], [1, 1383]];
 
 // console.dir([
 //     inside([ 1900, 290    ], polygon)
 // ]);
 
-for(i = 0;i< 100; i++){
-    let v = 1383+i;
-    console.log(v + ' : ' + inside([ 10, v], polygon))
-}
+// for(i = 0;i< 100; i++){
+//     let v = 1383+i;
+//     console.log(v + ' : ' + inside([ 10, v], polygon))
+// }
+
+var levenshtein = require('fast-levenshtein');
+
+var distance = levenshtein.get(' jack', '*  jack');
+console.log(distance);
 
 function invertAxis(data) {
     for(let i=0; i < data.textAnnotations; i++ ){

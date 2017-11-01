@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "deepcopy": "^0.6.3",
+    "fast-levenshtein": "^2.0.6",
     "point-in-polygon": "^1.0.1"
   }
 }
