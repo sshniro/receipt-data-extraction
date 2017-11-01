@@ -5,6 +5,8 @@ var fs = require("fs");
 var deepcopy = require("deepcopy");
 var inside = require('point-in-polygon');
 var content = fs.readFileSync("saint-non-order.json");
+var levenshtein = require('fast-levenshtein');
+var _ = require('lodash');
 var textJson = JSON.parse(content);
 
 mergeWords(textJson);
@@ -71,8 +73,25 @@ function mergeWords(data) {
     console.log(finalArray);
     // connect rectangles by big bb
 
-    let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
-    // console.log('test')
+    // let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
+    let lineItemList1 = regexToGetDescriptionAndPrice(finalArray);
+    console.log('test')
+}
+
+function calculateAccuracy(ocrLineItems, realLineItems) {
+    let descW = 90;
+    let priceW = 10;
+
+    for(let i=0; i< ocrLineItems.length; i++){
+        let scoreList = [];
+        for(let j=0; j<realLineItems.length; j++){
+            let descScore = levenshtein.get(ocrLineItems[i].desc, realLineItems[j].desc);
+            scoreList.push(descScore);
+        }
+
+
+    }
+
 }
 
 function getLineWithBB(mergedArray) {
