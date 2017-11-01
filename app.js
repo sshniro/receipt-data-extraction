@@ -1,13 +1,13 @@
 /**
  * Created by nirojans on 9/1/17.
  */
-var fs = require("fs");
-var deepcopy = require("deepcopy");
-var inside = require('point-in-polygon');
-var content = fs.readFileSync("bu.json");
-var levenshtein = require('fast-levenshtein');
-var _ = require('lodash');
-var textJson = JSON.parse(content);
+const fs = require("fs");
+const deepcopy = require("deepcopy");
+const inside = require('point-in-polygon');
+const content = fs.readFileSync("bu.json");
+const levenshtein = require('fast-levenshtein');
+const _ = require('lodash');
+const textJson = JSON.parse(content);
 
 mergeWords(textJson);
 

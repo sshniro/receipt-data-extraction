@@ -12,6 +12,7 @@
     "deepcopy": "^0.6.3",
     "fast-levenshtein": "^2.0.6",
     "lodash": "^4.17.4",
+    "mongodb": "^2.2.33",
     "point-in-polygon": "^1.0.1"
   }
 }
