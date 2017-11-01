@@ -4,7 +4,7 @@
 var fs = require("fs");
 var deepcopy = require("deepcopy");
 var inside = require('point-in-polygon');
-var content = fs.readFileSync("saint.json");
+var content = fs.readFileSync("saint-non-order.json");
 var textJson = JSON.parse(content);
 
 mergeWords(textJson);
@@ -63,51 +63,112 @@ function mergeWords(data) {
     rawText.pop();
 
     let mergedArray = getMergedLines(lines, rawText);
-
-    let arr = [];
-    arr.push(mergedArray[0].boundingPoly.vertices[0]);
-    arr.push(mergedArray[0].boundingPoly.vertices[1]);
-    let line1 = getRectangle(arr);
-
-    arr = [];
-    arr.push(mergedArray[0].boundingPoly.vertices[3]);
-    arr.push(mergedArray[0].boundingPoly.vertices[2]);
-    let line2 = getRectangle(arr);
-
-    let rect = createRectCoordinates(line1, line2);
     // let results = inside([1998, 230], rect);
     getBigbb(mergedArray);
+    combineBB(mergedArray);
+    let finalArray = getLineWithBB(mergedArray);
+    console.log(getLines(mergedArray));
+    console.log(finalArray);
+    // connect rectangles by big bb
 
     let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
-    console.log('test')
+    // console.log('test')
+}
+
+function getLineWithBB(mergedArray) {
+    let finalArray = [];
+
+    for(let i=0; i< mergedArray.length; i++) {
+        if(!mergedArray[i]['matched']){
+            if(mergedArray[i]['match'].length === 0){
+                finalArray.push(mergedArray[i].description)
+            }else{
+                let index = mergedArray[i]['match'][0]['matchLineNum'];
+                let secondPart = mergedArray[index].description;
+                finalArray.push(mergedArray[i].description + ' ' +secondPart);
+            }
+        }
+    }
+    return finalArray;
+}
+
+
+function combineBB(mergedArray) {
+    // select one word from the array
+    for(let i=0; i< mergedArray.length; i++) {
+
+        let bigBB = mergedArray[i]['bigbb'];
+
+        // iterate through all the array to find the match
+        for(let k=i; k< mergedArray.length; k++) {
+            // Do not compare with the own bounding box and which was not matched with a line
+            if(k !== i && mergedArray[k]['matched'] === false) {
+                let insideCount = 0;
+                for(let j=0; j < 4; j++) {
+                    let coordinate = mergedArray[k].boundingPoly.vertices[j];
+                    if(inside([coordinate.x, coordinate.y], bigBB)){
+                        insideCount += 1;
+                    }
+                }
+                // all four point were inside the big bb
+                if(insideCount === 4) {
+                    let match = {matchCount: insideCount, matchLineNum: k};
+                    mergedArray[i]['match'].push(match);
+                    mergedArray[k]['matched'] = true;
+                }
+
+            }
+        }
+    }
 }
 
 function getBigbb(mergedArray) {
 
     for(let i=0; i< mergedArray.length; i++) {
         let arr = [];
-        arr.push(mergedArray[i].boundingPoly.vertices[0]);
+
+        // calculate line height
+        let h1 = mergedArray[i].boundingPoly.vertices[0].y - mergedArray[i].boundingPoly.vertices[3].y;
+        let h2 = mergedArray[i].boundingPoly.vertices[1].y - mergedArray[i].boundingPoly.vertices[2].y;
+        let h = h1;
+        if(h2> h1) {
+            h = h2
+        }
+        let avgHeight = h * 0.4;
+
         arr.push(mergedArray[i].boundingPoly.vertices[1]);
-        let line1 = getRectangle(arr);
+        arr.push(mergedArray[i].boundingPoly.vertices[0]);
+        let line1 = getRectangle(deepcopy(arr), true, avgHeight, true);
 
         arr = [];
-        arr.push(mergedArray[i].boundingPoly.vertices[3]);
         arr.push(mergedArray[i].boundingPoly.vertices[2]);
-        let line2 = getRectangle(arr);
+        arr.push(mergedArray[i].boundingPoly.vertices[3]);
+        let line2 = getRectangle(deepcopy(arr), true, avgHeight, false);
 
         mergedArray[i]['bigbb'] = createRectCoordinates(line1, line2);
+        mergedArray[i]['lineNum'] = i;
+        mergedArray[i]['match'] = [];
+        mergedArray[i]['matched'] = false;
     }
 
 }
 
-function getRectangle(v, isRoundValues) {
-    let yDiff = (-v[1].y - (-v[0].y));
+function getRectangle(v, isRoundValues, avgHeight, isAdd) {
+    if(isAdd){
+        v[1].y = v[1].y + avgHeight;
+        v[0].y = v[0].y + avgHeight;
+    }else {
+        v[1].y = v[1].y - avgHeight;
+        v[0].y = v[0].y - avgHeight;
+    }
+
+    let yDiff = (v[1].y - v[0].y);
     let xDiff = (v[1].x - v[0].x);
 
     let gradient = yDiff / xDiff;
 
     let xThreshMin = 1;
-    let xThreshMax = 1000;
+    let xThreshMax = 2000;
 
     let yMin;
     let yMax;
@@ -117,7 +178,7 @@ function getRectangle(v, isRoundValues) {
         yMax = v[0].y;
     }else{
         yMin = (v[0].y) - (gradient * (v[0].x - xThreshMin));
-        yMax = (v[0].y) - (gradient * (xThreshMax - v[0].x));
+        yMax = (v[0].y) + (gradient * (xThreshMax - v[0].x));
     }
     if(isRoundValues) {
         yMin = Math.round(yMin);
