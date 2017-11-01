@@ -4,7 +4,7 @@
 var fs = require("fs");
 var deepcopy = require("deepcopy");
 var inside = require('point-in-polygon');
-var content = fs.readFileSync("saint-non-order.json");
+var content = fs.readFileSync("bu.json");
 var levenshtein = require('fast-levenshtein');
 var _ = require('lodash');
 var textJson = JSON.parse(content);
@@ -75,23 +75,41 @@ function mergeWords(data) {
 
     // let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
     let lineItemList1 = regexToGetDescriptionAndPrice(finalArray);
-    console.log('test')
+    calculateAccuracy(deepcopy(lineItemList1), deepcopy(lineItemList1));
+
+    console.log('test');
 }
 
-function calculateAccuracy(ocrLineItems, realLineItems) {
+function calculateAccuracy(ocrLineItems, realLineItemsClone) {
+    let realLineItems = deepcopy(realLineItemsClone);
     let descW = 90;
     let priceW = 10;
 
     for(let i=0; i< ocrLineItems.length; i++){
-        let scoreList = [];
+        let descScoreList, priceScoreList = [];
+
         for(let j=0; j<realLineItems.length; j++){
-            let descScore = levenshtein.get(ocrLineItems[i].desc, realLineItems[j].desc);
-            scoreList.push(descScore);
+            descScoreList.push(levenshtein.get(ocrLineItems[i].desc, realLineItems[j].desc));
+            priceScoreList.push(levenshtein.get(ocrLineItems[i].price, realLineItems[j].price));
         }
 
+        let index = _.indexOf(descScoreList, _.min(descScoreList));
+        let descScore = descScoreList[index];
 
+        let wordLen = ocrLineItems[i]['desc'].length;
+        let descPercentage = Math.round(((wordLen - descScore) / wordLen)*100);
+        let pricePercentage = Math.round(((wordLen - descScore) / wordLen)*100);
+
+        if(descScore > 40){
+            ocrLineItems[i]['temp'] = {stat: {score: deepcopy(descScoreList[index])}};
+            realLineItems.splice(index, 1);
+        }
     }
 
+    // If there are unidentified
+
+
+    console.log(ocrLineItems);
 }
 
 function getLineWithBB(mergedArray) {
@@ -253,5 +271,3 @@ function getMergedLines(lines,rawText) {
 // (?<description>.+)(?<currency>£|€|\$)(?<amount>\d+\.\d{2})
 // /(?:.+)(?:£|€|\$)(?:\d+\.\d{2})/
 /(.+)(£|€|\$)(\d+\.\d{2})/.exec('format  $12.00');
-
-
