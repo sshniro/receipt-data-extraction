@@ -47,6 +47,19 @@ function getShopName(lines) {
     return shopName;
 }
 
+function regexToGetDescriptionAndPrice(lines) {
+    let lineItemList = [];
+    let lineItem = {desc: "", price: ""};
+    for(let i=0; i < lines.length; i++) {
+        let line = lines[i];
+        let match = /(.+)(£|€|\$)(\d+\.\d{2})/.exec(line);
+        if(match !== null) {
+            lineItemList.push({desc: match[1], price: match[3]})
+        }
+    }
+    return lineItemList;
+}
+
 
 var exports = module.exports = {};
 
@@ -56,3 +69,12 @@ exports.getShopName = function (lines) {
 exports.generateEmptyReceipt = function () {
     return generateEmptyReceipt();
 };
+exports.regexToGetDescriptionAndPrice = function (lines) {
+    return regexToGetDescriptionAndPrice(lines);
+};
+
+
+
+// (?<description>.+)(?<currency>£|€|\$)(?<amount>\d+\.\d{2})
+// /(?:.+)(?:£|€|\$)(?:\d+\.\d{2})/
+// /(.+)(£|€|\$)(\d+\.\d{2})/.exec('format  $12.00');

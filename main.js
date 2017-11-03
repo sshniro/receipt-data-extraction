@@ -5,13 +5,3 @@ var levenshtein = require('fast-levenshtein');
 
 var distance = levenshtein.get(' jack', '*  jack');
 console.log(distance);
-
-function identifyShop() {
-    var string = "Stackoverflow is the BEST";
-    var result = string.match(/best/i);
-    // result == 'BEST';
-
-    if (result){
-        alert('Matched');
-    }
-}
