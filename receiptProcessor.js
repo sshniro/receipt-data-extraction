@@ -11,6 +11,7 @@ const textJson = JSON.parse(content);
 const receiptHelper = require('./receipt-helper');
 const accuracyHelper = require('./accuracyHelper');
 const coordinatesHelper = require('./coordinatesHelper');
+const mongoHelper = require('./mongoHelper');
 
 extractReceiptData(textJson);
 
@@ -58,8 +59,8 @@ function mergeWords(data) {
     // This does the line segmentation based on the bounding boxes
     let finalArray = getLineWithBB(mergedArray);
 
-    console.log(getLines(mergedArray));
-    console.log(finalArray);
+    // console.log(getLines(mergedArray));
+    // console.log(finalArray);
 
     // let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
     let itemList = receiptHelper.regexToGetDescriptionAndPrice(finalArray);
@@ -68,6 +69,7 @@ function mergeWords(data) {
     receipt.shopName = receiptHelper.getShopName(finalArray);
     accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(itemList), receipt);
     // calculate accuracy for shop name and total
+    mongoHelper.saveReceipt(receipt);
 
     console.log('test');
 }

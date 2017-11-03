@@ -1,5 +1,6 @@
 function generateEmptyReceipt() {
     let receipt = {
+        id:'',
         shopName: '',
         shopAccuracy: 0,
         lineItemStat: [],
