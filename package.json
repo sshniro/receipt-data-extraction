@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/storage": "^1.4.0",
     "deepcopy": "^0.6.3",
     "fast-levenshtein": "^2.0.6",
     "lodash": "^4.17.4",

@@ -75,18 +75,69 @@ function mergeWords(data) {
 
     // let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
     let lineItemList1 = regexToGetDescriptionAndPrice(finalArray);
-    calculateAccuracy(deepcopy(lineItemList1), deepcopy(lineItemList1));
-
+    let receipt = generateEmptyReceipt();
+    let shopName = getShopName(finalArray);
+    calculateAccuracyForLineItems(deepcopy(lineItemList1), deepcopy(lineItemList1), receipt);
+    // calculate accuracy for shop name and total
     console.log('test');
 }
 
-function calculateAccuracy(ocrLineItems, realLineItemsClone) {
+function getShopName(lines) {
+    let shopIdentifier = [];
+
+    let tescoIdentifier = {name: 'tesco', identifier: ['tesco']};
+    let saintIdentifier = {name: 'Sainsbury', identifier: ['Sainsbury']};
+
+    shopIdentifier.push(tescoIdentifier);
+    shopIdentifier.push(saintIdentifier);
+
+    let status = false;
+    let line;
+    let shopName = null;
+
+    for(let i=0; i < shopIdentifier.length; i++){
+        if(!status){
+            for(let j=0; j< shopIdentifier[i]['identifier'].length; j++){
+                let identifier = shopIdentifier[i]['identifier'][j];
+
+                for(let k=0; k < shopIdentifier.length; k++){
+                    line = lines[k];
+                    let rgxp = new RegExp(identifier, 'i');
+                    let result = line.match(rgxp);
+                    if(result){
+                        status = true;
+                        shopName = shopIdentifier[i]['name'];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return shopName;
+}
+
+function generateEmptyReceipt() {
+    let receipt = {
+        shopName: '',
+        shopAccuracy: 0,
+        lineItemStat: [],
+        lineItemAccuracy: 0,
+        totalVal: '',
+        totalValAccuracy: 0,
+        receiptAccuracy: 0
+    };
+
+    return receipt;
+}
+
+function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt) {
+    let lineItemStat = [];
     let realLineItems = deepcopy(realLineItemsClone);
-    let descW = 90;
-    let priceW = 10;
+
 
     for(let i=0; i< ocrLineItems.length; i++){
-        let descScoreList, priceScoreList = [];
+        let descScoreList  = [];
+        let priceScoreList  = [];
 
         for(let j=0; j<realLineItems.length; j++){
             descScoreList.push(levenshtein.get(ocrLineItems[i].desc, realLineItems[j].desc));
@@ -100,16 +151,50 @@ function calculateAccuracy(ocrLineItems, realLineItemsClone) {
         let descPercentage = Math.round(((wordLen - descScore) / wordLen)*100);
         let pricePercentage = Math.round(((wordLen - descScore) / wordLen)*100);
 
-        if(descScore > 40){
-            ocrLineItems[i]['temp'] = {stat: {score: deepcopy(descScoreList[index])}};
+        if(descPercentage > 40){
+            let statLineItem = {real : deepcopy(realLineItems[index]),
+                ocr : ocrLineItems[i] ,
+                descAccuracy: descPercentage ,
+                priceAccuracy : pricePercentage,
+                accuracy : computeLineItemAccuracyWithWeights(descPercentage, pricePercentage)
+            };
+            lineItemStat.push(statLineItem);
             realLineItems.splice(index, 1);
         }
     }
 
     // If there are unidentified
+    for(let j=0; j<realLineItems.length; j++){
+        let statLineItem = {real : deepcopy(realLineItems[index]),
+            ocr : ocrLineItems[i] ,
+            descAccuracy: 0,
+            priceAccuracy  : 0,
+            accuracy : 0
+        };
+        lineItemStat.push(statLineItem);
+    }
 
+    receipt.lineItemStat = lineItemStat;
+    receipt.lineItemAccuracy = computeTotalLineItemAccuracy(receipt);
+    return receipt;
+}
 
-    console.log(ocrLineItems);
+function computeLineItemAccuracyWithWeights(descPercentage, pricePercentage) {
+    let descW = 0.90;
+    let priceW = 0.10;
+
+    return Math.round((descPercentage * descW) + (pricePercentage * priceW))
+}
+
+function computeTotalLineItemAccuracy(receipt) {
+    let lineItemStat = receipt.lineItemStat;
+    let totalAccuracy = 0;
+
+    for(let i=0;i< lineItemStat.length; i++){
+        totalAccuracy = totalAccuracy + lineItemStat[i].accuracy;
+    }
+
+    return Math.round(totalAccuracy / lineItemStat.length);
 }
 
 function getLineWithBB(mergedArray) {
