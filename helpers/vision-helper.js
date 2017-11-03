@@ -2,7 +2,7 @@
 var vision = require('@google-cloud/vision');
 var visionClient = vision({
     projectId: 'test-hello-world-175205',
-    keyFilename: 'key.json'
+    keyFilename: './configs/key.json'
 });
 
 const getVisionText = function (fileName) {

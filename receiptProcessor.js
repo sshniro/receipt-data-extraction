@@ -130,3 +130,10 @@ function getMergedLines(lines,rawText) {
     }
     return mergedArray;
 }
+
+
+var exports = module.exports = {};
+
+exports.processReceipt = function (jsonData) {
+    return extractReceiptData(jsonData);
+};

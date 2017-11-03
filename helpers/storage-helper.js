@@ -1,7 +1,7 @@
 const Storage = require('@google-cloud/storage');
 var storage = Storage({
     projectId: 'test-hello-world-175205',
-    keyFilename: 'key.json'
+    keyFilename: './configs/key.json'
 });
 const bucketName = 'kwp-image';
 

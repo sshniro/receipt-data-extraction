@@ -8,8 +8,9 @@ const multer = require('multer');
 const upload = multer({dest: 'uploads/'});
 const jsonfile = require('jsonfile');
 
-const visionHelper = require('./vision-helper');
-const storageHelper = require('./storage-helper');
+const visionHelper = require('./helpers/vision-helper');
+const storageHelper = require('./helpers/storage-helper');
+const receiptProcessor = require('./receiptProcessor');
 
 const app = express();
 
@@ -75,10 +76,10 @@ app.get('/', function(req, res) {
 });
 
 app.listen(8080);
-console.log('Server Started');
+console.log('Server Started on port 8080');
 
 function base64Image(src) {
-    var data = fs.readFileSync(src).toString('base64');
+    let data = fs.readFileSync(src).toString('base64');
     return util.format('data:%s;base64,%s', mime.lookup(src), data);
 }
 

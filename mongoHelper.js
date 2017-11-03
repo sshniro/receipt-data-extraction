@@ -23,12 +23,11 @@ let getManualReceipt = function (receiptId) {
     return new Promise(function (resolve, reject) {
         MongoClient.connect(url, function (err, db) {
             let collection = db.collection('ocr');
-            // collection.insert(receipt, function (err, result) {
-            //     console.log('inserted the receipt');
-            //     if(err === null) {
-            //         resolve(result);
-            //     }
-            // });
+            collection.find({id: receiptId}).toArray(function(err, docs) {
+                if(err === null) {
+                    resolve(docs);
+                }
+            });
             db.close();
         });
     })
