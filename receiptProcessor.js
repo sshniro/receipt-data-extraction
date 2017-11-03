@@ -13,9 +13,9 @@ const accuracyHelper = require('./accuracyHelper');
 const coordinatesHelper = require('./coordinatesHelper');
 const mongoHelper = require('./mongoHelper');
 
-extractReceiptData(textJson);
+// extractReceiptData(textJson);
 
-function extractReceiptData(data) {
+function extractReceiptData(data, receiptId) {
     mergeWords(data);
 }
 
@@ -134,6 +134,6 @@ function getMergedLines(lines,rawText) {
 
 var exports = module.exports = {};
 
-exports.processReceipt = function (jsonData) {
-    return extractReceiptData(jsonData);
+exports.processReceipt = function (jsonData, receiptId) {
+    return extractReceiptData(jsonData, receiptId);
 };

@@ -30,6 +30,8 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                 console.log('vision api request success', visionResponse);
                 let jsonFile = 'uploads/' + originalFileName + '.json';
 
+                receiptProcessor.processReceipt(visionResponse[0]['responses'][0], originalFileName);
+
                 jsonfile.writeFile(jsonFile, visionResponse, function (err) {
 
                     res.writeHead(200, {
@@ -82,4 +84,3 @@ function base64Image(src) {
     let data = fs.readFileSync(src).toString('base64');
     return util.format('data:%s;base64,%s', mime.lookup(src), data);
 }
-
