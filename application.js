@@ -18,6 +18,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     let filename = req.file.path;
     let rename = 'uploads/' + req.file.originalname;
     let originalFileName =  req.file.originalname;
+    let fileNameWithoutExtension = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
 
     // check if json results exists
 
@@ -30,7 +31,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                 console.log('vision api request success', visionResponse);
                 let jsonFile = 'uploads/' + originalFileName + '.json';
 
-                receiptProcessor.processReceipt(visionResponse[0]['responses'][0], originalFileName);
+                let receipt = receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExtension);
 
                 jsonfile.writeFile(jsonFile, visionResponse, function (err) {
 
