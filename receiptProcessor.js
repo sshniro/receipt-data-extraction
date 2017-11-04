@@ -5,8 +5,8 @@ const fs = require("fs");
 const deepcopy = require("deepcopy");
 const _ = require('lodash');
 
-const content = fs.readFileSync("./json/bu.json");
-const textJson = JSON.parse(content);
+// const content = fs.readFileSync("./json/bu.json");
+// const textJson = JSON.parse(content);
 
 const receiptHelper = require('./receipt-helper');
 const accuracyHelper = require('./accuracyHelper');
@@ -38,7 +38,7 @@ function getLines(mergedWordsArray) {
 }
 
 function mergeWords(data) {
-    const yMax = getYMax(textJson);
+    const yMax = getYMax(data);
     data = coordinatesHelper.invertAxis(data, yMax);
 
     // Auto identified and merged lines from gcp vision

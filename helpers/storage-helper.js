@@ -7,6 +7,8 @@ const bucketName = 'kwp-image';
 const jsonFileBucketName = 'kwp-json';
 const processedImage = 'kwp-processed';
 
+const jsonDownloadDestination = './json/';
+
 const uploadFile = function (fileName, bucketName) {
     return new Promise(function (resolve, reject) {
         storage
@@ -23,22 +25,21 @@ const uploadFile = function (fileName, bucketName) {
     })
 };
 
-const checkIfFileExists = function (jsonFileName) {
+const downloadJson = function (srcFilename, destinationFilename) {
     return new Promise(function (resolve, reject) {
+        // let fileName = jsonDownloadDestination + srcFilename;
+        const options = {
+            destination: destinationFilename,
+        };
+
+        // Downloads the file
         storage
             .bucket(jsonFileBucketName)
-            .getFiles()
-            .then(results => {
-                const files = results[0];
-
-                console.log('Files:');
-                files.forEach(file => {
-                    console.log(file.name);
-                    if(file.name === jsonFileName) {
-                        console.log('same file has been found');
-                    }
-                });
-                resolve(files);
+            .file(srcFilename)
+            .download(options)
+            .then(() => {
+                console.log(`downloaded ${destinationFilename}.`);
+                resolve('downloaded')
             })
             .catch(err => {
                 reject(err);
@@ -46,7 +47,29 @@ const checkIfFileExists = function (jsonFileName) {
     })
 };
 
+const checkIfFileExists = function (jsonFileName) {
+    return new Promise((resolve, reject) => {
+        let status = false;
+        storage
+            .bucket(jsonFileBucketName)
+            .getFiles()
+            .then(results => {
+                const files = results[0];
+                files.forEach(file => {
+                    if(file.name === jsonFileName) {
+                        console.log('json file alread exists in gcp, intiating download sequence');
+                        status = true;
+                    }
+                });
+                resolve(status);
+            })
+            .catch(err => {
+                reject(err);
+            });
+    })
+};
 
+// checkIfFileExists('saint.json');
 
 var exports = module.exports = {};
 
@@ -54,10 +77,14 @@ exports.uploadFile = function (fileName) {
     return uploadFile(fileName, bucketName);
 };
 
-exports.jsonFile = function (fileName) {
+exports.uploadJsonFile = function (fileName) {
     return uploadFile(fileName, jsonFileBucketName);
 };
 
 exports.checkIfFileExists = function (fileName) {
-    return uploadFile(fileName);
+    return checkIfFileExists(fileName);
+};
+
+exports.downloadJson = function (fileName) {
+    return downloadJson(fileName);
 };

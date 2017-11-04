@@ -33,11 +33,11 @@ let getManualReceipt = function (receiptId, collectionName) {
     })
 };
 
-getManualReceipt('S01200HQQ2D3', 'tesco').then(function (response) {
-    console.log(response);
-}).catch(function (err) {
-    console.log(err);
-});
+// getManualReceipt('S01200HQQ2D3', 'tesco').then(function (response) {
+//     console.log(response);
+// }).catch(function (err) {
+//     console.log(err);
+// });
 
 function createReceipt(lineItemsArray) {
     let receipt;
@@ -65,4 +65,4 @@ exports.getManualReceipt = function (receiptId, collectionName) {
     return getManualReceipt(receiptId);
 };
 
-'30.00'.replace(/^0+|0+$/g, "")
+// '30.00'.replace(/^0+|0+$/g, "")
