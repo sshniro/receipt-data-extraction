@@ -24,7 +24,8 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
         let pricePercentage = Math.round(((wordLen - descScore) / wordLen)*100);
 
         if(descPercentage > 40){
-            let statLineItem = {real : deepcopy(realLineItems[index]),
+            let statLineItem = {
+                real : deepcopy(realLineItems[index]),
                 ocr : ocrLineItems[i] ,
                 descAccuracy: descPercentage ,
                 priceAccuracy : pricePercentage,
@@ -37,7 +38,8 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
 
     // If there are unidentified
     for(let j=0; j<realLineItems.length; j++){
-        let statLineItem = {real : deepcopy(realLineItems[index]),
+        let statLineItem = {
+            real : deepcopy(realLineItems[j]),
             ocr : ocrLineItems[i] ,
             descAccuracy: 0,
             priceAccuracy  : 0,

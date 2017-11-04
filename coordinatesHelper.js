@@ -12,6 +12,16 @@ function invertAxis(data, yMax) {
     return data;
 }
 
+function getYMax(data) {
+    let v = data.textAnnotations[0].boundingPoly.vertices;
+    let yArray = [];
+    for(let i=0; i <4; i++){
+        yArray.push(v[i]['y']);
+    }
+    return Math.max.apply(null, yArray);
+}
+
+
 function combineBB(mergedArray) {
     // select one word from the array
     for(let i=0; i< mergedArray.length; i++) {
@@ -126,4 +136,8 @@ exports.getBigbb = function (mergedArray) {
 
 exports.combineBB = function (mergedArray) {
     return combineBB(mergedArray);
+};
+
+exports.getYMax = function (data) {
+    return getYMax(data);
 };

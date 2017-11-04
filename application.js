@@ -29,7 +29,9 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                 let content = fs.readFileSync(jsonFileLocation);
                 let textJson = JSON.parse(content);
 
-                receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension);
+                let receipt = receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension);
+                let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                uploadResponse(res, filename, htmlData);
             })
         }else{
             // else upload and save the json to google storage
@@ -69,12 +71,13 @@ let uploadResponse = (res, imageFileName, data) => {
         'Content-Type': 'text/html'
     });
     res.write('<!DOCTYPE HTML><html><body>');
-
+    res.write(form);
     // Base64 the image so we can display it on the page
     res.write('<img width=200 src="' + base64Image(imageFileName) + '"><br>');
 
     // Write out the JSON output of the Vision API
-    res.write(prepareHtmlStatData(data));
+    // res.write(prepareHtmlStatData(data));
+    res.write(data);
 
     // Delete file (optional)
     fs.unlinkSync(imageFileName);

@@ -2,12 +2,12 @@ function generateEmptyReceipt() {
     let receipt = {
         id:'',
         shopName: '',
-        shopAccuracy: 0,
+        shopAccuracy: '-',
         lineItemStat: [],
-        lineItemAccuracy: 0,
+        lineItemAccuracy: '-',
         totalVal: '',
-        totalValAccuracy: 0,
-        receiptAccuracy: 0
+        totalValAccuracy: '-',
+        receiptAccuracy: '-'
     };
 
     return receipt;

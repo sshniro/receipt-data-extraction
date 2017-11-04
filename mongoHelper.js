@@ -1,5 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
-
+const tescoCollectionName = 'tesco';
+const saintsCollectionName = 'sainsbury';
 // Connection URL
 const url = 'mongodb://localhost:27017/kwp';
 
@@ -19,7 +20,7 @@ let saveReceipt = function (receipt) {
     })
 };
 
-let getManualReceipt = function (receiptId, collectionName) {
+let getManualReceiptData = function (receiptId, collectionName) {
     return new Promise(function (resolve, reject) {
         MongoClient.connect(url, function (err, db) {
             let collection = db.collection(collectionName);
@@ -33,11 +34,28 @@ let getManualReceipt = function (receiptId, collectionName) {
     })
 };
 
-// getManualReceipt('S01200HQQ2D3', 'tesco').then(function (response) {
-//     console.log(response);
-// }).catch(function (err) {
-//     console.log(err);
-// });
+
+const getManualReceipt = (receiptId) => {
+    return new Promise((resolve, reject) => {
+        getManualReceiptData(receiptId, tescoCollectionName).then((tescoResponse) => {
+            if(tescoResponse.length === 0){
+                getManualReceiptData(receiptId, saintsCollectionName).then((saintsResponse) => {
+                    // console.log('saits reponse' + saintsResponse);
+                    resolve(saintsResponse);
+                });
+            }else {
+                // console.log('response found in tesco' + tescoResponse);
+                resolve(tescoResponse);
+            }
+
+        }).catch(function (err) {
+            console.log('error occurred while connecting to db to get manual receipt', err);
+        });
+    });
+};
+
+// getManualReceipt('S01200HQQ2D3');
+// getManualReceipt('S01200HQQ2FB');
 
 function createReceipt(lineItemsArray) {
     let receipt;
@@ -61,7 +79,7 @@ exports.saveReceipt = function (receipt) {
     return saveReceipt(receipt);
 };
 
-exports.getManualReceipt = function (receiptId, collectionName) {
+exports.getManualReceipt = function (receiptId) {
     return getManualReceipt(receiptId);
 };
 

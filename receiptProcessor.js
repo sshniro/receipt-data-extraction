@@ -5,29 +5,86 @@ const fs = require("fs");
 const deepcopy = require("deepcopy");
 const _ = require('lodash');
 
-// const content = fs.readFileSync("./json/bu.json");
-// const textJson = JSON.parse(content);
+const content = fs.readFileSync("./json/ffce32819e084879a59925342e8cc89b.jpg.json");
+const textJson = JSON.parse(content);
 
 const receiptHelper = require('./receipt-helper');
 const accuracyHelper = require('./accuracyHelper');
 const coordinatesHelper = require('./coordinatesHelper');
 const mongoHelper = require('./mongoHelper');
 
-// extractReceiptData(textJson);
+extractReceiptData(textJson[0]['responses'][0], 'testing').then((receipt) => {
+    console.log(receipt);
+}).catch((err) => {
+    console.log(err);
+});
 
 function extractReceiptData(data, receiptId) {
-    mergeWords(data);
+    return mergeWords(data, receiptId);
 }
 
-function getYMax(data) {
-    let v = data.textAnnotations[0].boundingPoly.vertices;
-    let yArray = [];
-    for(let i=0; i <4; i++){
-        yArray.push(v[i]['y']);
+function mergeWords(data, receiptId) {
+    return new Promise((resolve, reject) => {
+        const yMax = coordinatesHelper.getYMax(data);
+        data = coordinatesHelper.invertAxis(data, yMax);
+
+        // Auto identified and merged lines from gcp vision
+        let lines = data.textAnnotations[0].description.split('\n');
+        // gcp vision full text
+        let rawText = deepcopy(data.textAnnotations);
+
+        // reverse to use lifo, because array.shift() will consume 0(n)
+        lines = lines.reverse();
+        rawText = rawText.reverse();
+        // to remove the zeroth element which gives the total summary of the text
+        rawText.pop();
+
+        let mergedArray = getMergedLines(lines, rawText);
+        coordinatesHelper.getBigbb(mergedArray);
+        coordinatesHelper.combineBB(mergedArray);
+
+        // This does the line segmentation based on the bounding boxes
+        let finalArray = getLineWithBB(mergedArray);
+
+        // console.log(getLines(mergedArray));
+        // console.log(finalArray);
+
+        let receipt = receiptHelper.generateEmptyReceipt();
+
+        receipt.shopName = receiptHelper.getShopName(finalArray);
+        let itemList = receiptHelper.regexToGetDescriptionAndPrice(finalArray);
+
+        mongoHelper.getManualReceipt(receiptId).then((manualData) => {
+            if(manualData.length === 0){
+                console.log('no records have been found in the db');
+                generateFinalReceiptWithOCRdata(receipt, itemList);
+            }else{
+                accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(itemList), receipt);
+                // calculate accuracy for shop name and total
+            }
+            resolve(receipt);
+            // mongoHelper.saveReceipt(receipt);
+        });
+
+    });
+}
+
+function generateFinalReceiptWithOCRdata(receipt, lineItemList) {
+    let lineItemStat = [];
+    for(let i=0; i<lineItemList.length; i++){
+        let line = lineItemList[i];
+        let statLineItem = {
+            real : {desc: '-', price: '-'},
+            ocr : {desc: line.desc, price: line.price} ,
+            descAccuracy: '-',
+            priceAccuracy  : '-',
+            accuracy : '-'
+        };
+        lineItemStat.push(statLineItem);
     }
-    return Math.max.apply(null, yArray);
+    receipt.lineItemStat = lineItemStat;
+    return receipt;
 }
-
 
 function getLines(mergedWordsArray) {
     let lines = [];
@@ -35,43 +92,6 @@ function getLines(mergedWordsArray) {
         lines.push(mergedWordsArray[i]['description']);
     }
     return lines;
-}
-
-function mergeWords(data) {
-    const yMax = getYMax(data);
-    data = coordinatesHelper.invertAxis(data, yMax);
-
-    // Auto identified and merged lines from gcp vision
-    let lines = data.textAnnotations[0].description.split('\n');
-    // gcp vision full text
-    let rawText = deepcopy(data.textAnnotations);
-
-    // reverse to use lifo, because array.shift() will consume 0(n)
-    lines = lines.reverse();
-    rawText = rawText.reverse();
-    // to remove the zeroth element which gives the total summary of the text
-    rawText.pop();
-
-    let mergedArray = getMergedLines(lines, rawText);
-    coordinatesHelper.getBigbb(mergedArray);
-    coordinatesHelper.combineBB(mergedArray);
-
-    // This does the line segmentation based on the bounding boxes
-    let finalArray = getLineWithBB(mergedArray);
-
-    // console.log(getLines(mergedArray));
-    // console.log(finalArray);
-
-    // let lineItemList = regexToGetDescriptionAndPrice(getLines(mergedArray));
-    let itemList = receiptHelper.regexToGetDescriptionAndPrice(finalArray);
-
-    let receipt = receiptHelper.generateEmptyReceipt();
-    receipt.shopName = receiptHelper.getShopName(finalArray);
-    accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(itemList), receipt);
-    // calculate accuracy for shop name and total
-    mongoHelper.saveReceipt(receipt);
-
-    console.log('test');
 }
 
 // TODO implement the line ordering
@@ -131,9 +151,75 @@ function getMergedLines(lines,rawText) {
     return mergedArray;
 }
 
+function generateHtmlForReceipt(receipt) {
+    let lineItemStat = receipt.lineItemStat;
+    let lineItem;
+    let htmlString = "";
+    let sep = ' | ';
+
+    let pStartTag = '<p>';
+    let pEndTag = '</p>';
+
+    let tableStartTag = '<table>';
+    let tableEndTag = '</table>';
+
+    let trSTag = '<tr>';
+    let trETag = '</tr>';
+
+    let thSTag = '<th>';
+    let thETag = '</th>';
+
+    let tdSTag = '<td>';
+    let tdETag = '</td>';
+
+    htmlString = tableStartTag +
+        trSTag +
+        thSTag + 'Real Desc' + thETag +
+        thSTag + 'OCR Desc' + thETag +
+        thSTag + 'Desc Accuracy' + thETag +
+        thSTag + 'Real Price' + thETag +
+        thSTag + 'OCR Price' + thETag +
+        thSTag + 'Price Accuracy' + thETag +
+        thSTag + 'Total Accuracy' + thETag +
+        trETag;
+
+    for (let i=0; i<lineItemStat.length; i++) {
+        lineItem = lineItemStat[i];
+
+        let realDesc = lineItem.real.desc;
+        let realPrice = lineItem.real.price;
+        let ocrDesc = lineItem.ocr.desc;
+        let ocrPrice = lineItem.ocr.price;
+        let descAccuracy = lineItem.descAccuracy;
+        let priceAccuracy = lineItem.priceAccuracy;
+        let accuracy = lineItem.accuracy;
+
+        // let lineStatString = pStartTag + realDesc + sep + ocrDesc + sep + descAccuracy + sep +
+        //     realPrice + sep + ocrPrice + sep + priceAccuracy + sep + accuracy + pEndTag;
+
+        let lineStatString = trSTag +
+            tdSTag + realDesc + tdETag +
+            tdSTag + ocrDesc + tdETag +
+            tdSTag + descAccuracy + tdETag +
+            tdSTag + realPrice + tdETag +
+            tdSTag + ocrPrice + tdETag +
+            tdSTag + priceAccuracy + tdETag +
+            tdSTag + accuracy + tdETag +
+            trETag;
+
+        htmlString = htmlString + lineStatString;
+    }
+
+    htmlString = htmlString + tableEndTag;
+    return htmlString;
+}
 
 var exports = module.exports = {};
 
 exports.processReceipt = function (jsonData, receiptId) {
     return extractReceiptData(jsonData, receiptId);
+};
+
+exports.generateHtmlForReceipt = function (receipt) {
+    return generateHtmlForReceipt(receipt);
 };
