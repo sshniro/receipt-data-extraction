@@ -29,9 +29,13 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                 let content = fs.readFileSync(jsonFileLocation);
                 let textJson = JSON.parse(content);
 
-                let receipt = receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension);
-                let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
-                uploadResponse(res, filename, htmlData);
+                // let receipt = receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension);
+                // let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+
+                receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
+                    let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                    uploadResponse(res, filename, htmlData);
+                });
             })
         }else{
             // else upload and save the json to google storage
@@ -44,7 +48,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                             // console.log('error in saving json file to local file system');
                             storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
                                 console.log('json uploaded');
-                                uploadResponse(res, rename, visionResponse);
+                                // uploadResponse(res, rename, visionResponse);
                                 // let receipt = receiptProcessor.processReceipt(visionResponse[0]['responses'][0],
                                 // fileNameWithoutExtension);
                             });

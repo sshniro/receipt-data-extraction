@@ -5,9 +5,10 @@ function generateEmptyReceipt() {
         shopAccuracy: '-',
         lineItemStat: [],
         lineItemAccuracy: '-',
-        totalVal: '',
+        totalVal: '-',
         totalValAccuracy: '-',
-        receiptAccuracy: '-'
+        receiptAccuracy: '-',
+        isVerified : false
     };
 
     return receipt;

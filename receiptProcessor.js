@@ -13,11 +13,11 @@ const accuracyHelper = require('./accuracyHelper');
 const coordinatesHelper = require('./coordinatesHelper');
 const mongoHelper = require('./mongoHelper');
 
-extractReceiptData(textJson[0]['responses'][0], 'testing').then((receipt) => {
-    console.log(receipt);
-}).catch((err) => {
-    console.log(err);
-});
+// extractReceiptData(textJson[0]['responses'][0], 'testing').then((receipt) => {
+//     console.log(receipt);
+// }).catch((err) => {
+//     console.log(err);
+// });
 
 function extractReceiptData(data, receiptId) {
     return mergeWords(data, receiptId);
@@ -59,6 +59,7 @@ function mergeWords(data, receiptId) {
                 console.log('no records have been found in the db');
                 generateFinalReceiptWithOCRdata(receipt, itemList);
             }else{
+                receipt.isVerified = true;
                 accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(itemList), receipt);
                 // calculate accuracy for shop name and total
             }
@@ -172,7 +173,17 @@ function generateHtmlForReceipt(receipt) {
     let tdSTag = '<td>';
     let tdETag = '</td>';
 
-    htmlString = tableStartTag +
+    if(receipt.isVerified) {
+        htmlString = htmlString + pStartTag + 'Manual Data not available to compute accuracy' + pEndTag;
+        htmlString = htmlString + pStartTag + 'Shop Name : ' + receipt.shopName + pEndTag + sep + ' accuracy : ' + receipt.shopAccuracy;
+        htmlString = htmlString + pStartTag + 'Receipt Total : ' + receipt.totalVal + pEndTag + sep + ' accuracy : ' + receipt.totalValAccuracy;;
+    }else{
+        htmlString = htmlString + pStartTag + 'Shop Name : ' + receipt.shopName + pEndTag;
+        htmlString = htmlString + pStartTag + 'Receipt Total : ' + receipt.totalVal + pEndTag;
+    }
+
+
+    htmlString = htmlString + tableStartTag +
         trSTag +
         thSTag + 'Real Desc' + thETag +
         thSTag + 'OCR Desc' + thETag +
