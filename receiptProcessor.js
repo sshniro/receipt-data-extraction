@@ -12,6 +12,7 @@ const receiptHelper = require('./receipt-helper');
 const accuracyHelper = require('./accuracyHelper');
 const coordinatesHelper = require('./coordinatesHelper');
 const mongoHelper = require('./mongoHelper');
+const htmlHelper = require('./helpers/helper.js');
 
 // extractReceiptData(textJson[0]['responses'][0], 'S01200HS22A9').then((receipt) => {
 //     console.log(receipt);
@@ -46,10 +47,11 @@ function mergeWords(data, receiptId) {
         // This does the line segmentation based on the bounding boxes
         let finalArray = getLineWithBB(mergedArray);
 
-        // console.log(getLines(mergedArray));
-        // console.log(finalArray);
-
         let receipt = receiptHelper.generateEmptyReceipt();
+
+        receipt.stage1 = getLines(mergedArray);
+        receipt.stage2 = finalArray;
+
 
         receipt.shopName = receiptHelper.getShopName(finalArray);
         let itemList = receiptHelper.regexToGetDescriptionAndPrice(finalArray);
@@ -77,7 +79,7 @@ function generateFinalReceiptWithOCRdata(receipt, lineItemList) {
     for(let i=0; i<lineItemList.length; i++){
         let line = lineItemList[i];
         let statLineItem = {
-            real : {desc: '-', price: '-'},
+            real : {line: i,desc: '-', price: '-'},
             ocr : {desc: line.desc, price: line.price} ,
             descAccuracy: '-',
             priceAccuracy  : '-',
@@ -212,6 +214,7 @@ function generateHtmlForReceipt(receipt) {
 
     htmlString = htmlString + tableStartTag +
         trSTag +
+        thSTag + 'Line No.' + thETag +
         thSTag + 'Real Desc' + thETag +
         thSTag + 'OCR Desc' + thETag +
         thSTag + 'Desc Accuracy' + thETag +
@@ -224,6 +227,7 @@ function generateHtmlForReceipt(receipt) {
     for (let i=0; i<lineItemStat.length; i++) {
         lineItem = lineItemStat[i];
 
+        let lineNum = lineItem.real.line;
         let realDesc = lineItem.real.desc;
         let realPrice = lineItem.real.price;
         let ocrDesc = lineItem.ocr.desc;
@@ -236,6 +240,7 @@ function generateHtmlForReceipt(receipt) {
         //     realPrice + sep + ocrPrice + sep + priceAccuracy + sep + accuracy + pEndTag;
 
         let lineStatString = trSTag +
+            tdSTag + lineNum + tdETag +
             tdSTag + realDesc + tdETag +
             tdSTag + ocrDesc + tdETag +
             tdSTag + descAccuracy + tdETag +
@@ -249,6 +254,8 @@ function generateHtmlForReceipt(receipt) {
     }
 
     htmlString = htmlString + tableEndTag;
+    htmlString = htmlString + htmlHelper.generateAlgorithmOutPutTable(receipt);
+
     return htmlString;
 }
 

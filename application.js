@@ -22,6 +22,8 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     let jsonFileName = originalFileName + '.json';
     let jsonFileLocation = 'json/' + jsonFileName;
 
+    console.log('started processing : ', originalFileName);
+
     if (fs.existsSync(jsonFileLocation)) {
         // Do something
         let content = fs.readFileSync(jsonFileLocation);
@@ -82,7 +84,7 @@ let uploadResponse = (res, imageFileName, data) => {
     res.writeHead(200, {
         'Content-Type': 'text/html'
     });
-    res.write('<!DOCTYPE HTML><html><body>');
+    res.write('<!DOCTYPE HTML><html><head><meta charset="utf-8" /></head><body>');
     res.write(form);
     // Base64 the image so we can display it on the page
     res.write('<img width=200 src="' + base64Image(imageFileName) + '"><br>');
