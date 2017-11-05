@@ -25,7 +25,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     // If the json file exists avoid doing vision detection
     storageHelper.checkIfFileExists(jsonFileName).then((checkRes) => {
         if(checkRes === true) {
-            storageHelper.downloadJson(jsonFileName).then((downloadRes) => {
+            storageHelper.downloadJson(jsonFileName, jsonFileLocation).then((downloadRes) => {
                 let content = fs.readFileSync(jsonFileLocation);
                 let textJson = JSON.parse(content);
 

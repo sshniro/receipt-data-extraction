@@ -38,7 +38,7 @@ const downloadJson = function (srcFilename, destinationFilename) {
             .file(srcFilename)
             .download(options)
             .then(() => {
-                console.log(`downloaded ${destinationFilename}.`);
+                console.log(`downloaded ${destinationFilename}`);
                 resolve('downloaded')
             })
             .catch(err => {
@@ -85,6 +85,6 @@ exports.checkIfFileExists = function (fileName) {
     return checkIfFileExists(fileName);
 };
 
-exports.downloadJson = function (fileName) {
-    return downloadJson(fileName);
+exports.downloadJson = function (fileName, destinationFilename) {
+    return downloadJson(fileName, destinationFilename);
 };

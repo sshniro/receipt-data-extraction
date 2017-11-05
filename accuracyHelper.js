@@ -53,7 +53,7 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
     for(let j=0; j<realLineItems.length; j++){
         let statLineItem = {
             real : deepcopy(realLineItems[j]),
-            ocr : ocrLineItems[i] ,
+            ocr : {desc: '-', price: '-'} ,
             descAccuracy: 0,
             priceAccuracy  : 0,
             accuracy : 0
