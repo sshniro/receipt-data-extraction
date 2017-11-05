@@ -62,6 +62,22 @@ function regexToGetDescriptionAndPrice(lines) {
     return lineItemList;
 }
 
+function createReceiptFromManualData(lineItemsArray) {
+    let receipt = {};
+    let lineItems = [];
+    for(let i=0; i< lineItemsArray.length; i++){
+        lineItems.push({
+            line: lineItemsArray[i]['TILLROLL_LINE_NUMBER'],
+            desc:lineItemsArray[i]['TILLROLL_LINE_DESC'],
+            price: lineItemsArray[i]['LINE_PRICE']
+        })
+    }
+    receipt.lineItems = lineItems;
+    receipt.shopName = lineItemsArray[0]['SHOP_NAME'];
+    receipt.total = lineItemsArray[0]['TILLROLL_RECORDED_SPEND'];
+    return receipt;
+}
+
 
 var exports = module.exports = {};
 
@@ -73,6 +89,9 @@ exports.generateEmptyReceipt = function () {
 };
 exports.regexToGetDescriptionAndPrice = function (lines) {
     return regexToGetDescriptionAndPrice(lines);
+};
+exports.createReceiptFromManualData = function (lineItemsArray) {
+    return createReceiptFromManualData(lineItemsArray);
 };
 
 

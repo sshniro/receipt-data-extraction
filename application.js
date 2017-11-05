@@ -43,17 +43,16 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                 storageHelper.uploadFile(rename).then(function (storageResponse) {
                     console.log(storageResponse);
                     visionHelper.getVisionText(originalFileName).then(function (visionResponse) {
-                        console.log('vision api request success', visionResponse);
+                        console.log('vision api request success. proceeding to upload the json');
                         jsonfile.writeFile(jsonFileLocation, visionResponse, function (err) {
                             // console.log('error in saving json file to local file system');
                             storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
                                 console.log('json uploaded');
-                                // uploadResponse(res, rename, visionResponse);
-                                // let receipt = receiptProcessor.processReceipt(visionResponse[0]['responses'][0],
-                                // fileNameWithoutExtension);
+                                receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
+                                    let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                                    uploadResponse(res, rename, htmlData);
+                                });
                             });
-
-
                         });
                     }).catch(function () {
                         console.log('error occurred in the vision api text extraction');
@@ -67,8 +66,11 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     }).catch((err) => {
         console.log('error occurred while connecting the gcp bucket');
     });
-
 });
+
+let processReceipt = () => {
+
+};
 
 let uploadResponse = (res, imageFileName, data) => {
     res.writeHead(200, {

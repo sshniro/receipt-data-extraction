@@ -2,6 +2,16 @@ const deepcopy = require("deepcopy");
 const levenshtein = require('fast-levenshtein');
 const _ = require('lodash');
 
+function calculateAccuracyForShopName(receipt, manualReceipt) {
+    if(receipt.shopName.toLowerCase().trim() === manualReceipt.shopName.toLowerCase()) {
+        receipt.shopAccuracy = 100;
+    }else {
+        receipt.shopAccuracy = 0;
+    }
+    return receipt;
+}
+
+// TODO remove * from the description
 function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt) {
     let lineItemStat = [];
     let realLineItems = deepcopy(realLineItemsClone);
@@ -12,16 +22,19 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
         let priceScoreList  = [];
 
         for(let j=0; j<realLineItems.length; j++){
-            descScoreList.push(levenshtein.get(ocrLineItems[i].desc, realLineItems[j].desc));
-            priceScoreList.push(levenshtein.get(ocrLineItems[i].price, realLineItems[j].price));
+            let price = parseFloat(ocrLineItems[i].price).toString();
+            descScoreList.push(levenshtein.get(ocrLineItems[i].desc.toLowerCase().trim(), realLineItems[j].desc.toLowerCase().trim()));
+            priceScoreList.push(levenshtein.get(price, realLineItems[j].price.toString()));
         }
 
         let index = _.indexOf(descScoreList, _.min(descScoreList));
         let descScore = descScoreList[index];
+        let priceScore = priceScoreList[index];
 
         let wordLen = ocrLineItems[i]['desc'].length;
+        let priceLen = ocrLineItems[i]['price'].length;
         let descPercentage = Math.round(((wordLen - descScore) / wordLen)*100);
-        let pricePercentage = Math.round(((wordLen - descScore) / wordLen)*100);
+        let pricePercentage = Math.round(((priceLen - priceScore) / priceLen)*100);
 
         if(descPercentage > 40){
             let statLineItem = {
@@ -71,8 +84,29 @@ function computeTotalLineItemAccuracy(receipt) {
     return Math.round(totalAccuracy / lineItemStat.length);
 }
 
+function computeReceiptAccuracy(receipt) {
+    let lineItemWeight = 0.90;
+    let shopNameWeight = 0.05;
+    let totalValWeight = 0.05;
+
+    let accuracy = 0;
+
+    accuracy = Math.round(receipt.lineItemAccuracy * lineItemWeight);
+    accuracy = accuracy + Math.round(receipt.shopAccuracy * shopNameWeight);
+    // Math.round(receipt.totalValAccuracy * totalValWeight);
+    receipt.accuracy = accuracy;
+}
+
 var exports = module.exports = {};
 
 exports.calculateAccuracyForLineItems = function (ocrLineItems, realLineItemsClone, receipt) {
     return calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt);
+};
+
+exports.calculateAccuracyForShopName = function (receipt, manualReceipt) {
+    return calculateAccuracyForShopName(receipt, manualReceipt);
+};
+
+exports.computeReceiptAccuracy = function (receipt) {
+    return computeReceiptAccuracy(receipt);
 };

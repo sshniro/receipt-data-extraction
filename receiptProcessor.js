@@ -5,15 +5,15 @@ const fs = require("fs");
 const deepcopy = require("deepcopy");
 const _ = require('lodash');
 
-const content = fs.readFileSync("./json/ffce32819e084879a59925342e8cc89b.jpg.json");
-const textJson = JSON.parse(content);
+// const content = fs.readFileSync("./json/S01200HS22A9.jpeg.json");
+// const textJson = JSON.parse(content);
 
 const receiptHelper = require('./receipt-helper');
 const accuracyHelper = require('./accuracyHelper');
 const coordinatesHelper = require('./coordinatesHelper');
 const mongoHelper = require('./mongoHelper');
 
-// extractReceiptData(textJson[0]['responses'][0], 'testing').then((receipt) => {
+// extractReceiptData(textJson[0]['responses'][0], 'S01200HS22A9').then((receipt) => {
 //     console.log(receipt);
 // }).catch((err) => {
 //     console.log(err);
@@ -59,9 +59,11 @@ function mergeWords(data, receiptId) {
                 console.log('no records have been found in the db');
                 generateFinalReceiptWithOCRdata(receipt, itemList);
             }else{
+                let manualReceipt = receiptHelper.createReceiptFromManualData(manualData);
                 receipt.isVerified = true;
-                accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(itemList), receipt);
-                // calculate accuracy for shop name and total
+                accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(manualReceipt.lineItems), receipt);
+                accuracyHelper.calculateAccuracyForShopName(receipt, manualReceipt);
+                accuracyHelper.computeReceiptAccuracy(receipt);
             }
             resolve(receipt);
             // mongoHelper.saveReceipt(receipt);
@@ -174,10 +176,12 @@ function generateHtmlForReceipt(receipt) {
     let tdETag = '</td>';
 
     if(receipt.isVerified) {
-        htmlString = htmlString + pStartTag + 'Manual Data not available to compute accuracy' + pEndTag;
-        htmlString = htmlString + pStartTag + 'Shop Name : ' + receipt.shopName + pEndTag + sep + ' accuracy : ' + receipt.shopAccuracy;
-        htmlString = htmlString + pStartTag + 'Receipt Total : ' + receipt.totalVal + pEndTag + sep + ' accuracy : ' + receipt.totalValAccuracy;;
+        htmlString = htmlString + pStartTag + 'Receipt Accuracy : ' + receipt.accuracy +pEndTag;
+        htmlString = htmlString + pStartTag + 'Shop Name : ' + receipt.shopName + sep + ' accuracy : ' + receipt.shopAccuracy + pEndTag;
+        htmlString = htmlString + pStartTag + 'Receipt Total : ' + receipt.totalVal + sep + ' accuracy : ' + receipt.totalValAccuracy + pEndTag;
+        htmlString = htmlString + pStartTag + 'Line Item Accuracy : ' + receipt.lineItemAccuracy + pEndTag;
     }else{
+        htmlString = htmlString + pStartTag + 'Manual Data not available to compute accuracy' + pEndTag;
         htmlString = htmlString + pStartTag + 'Shop Name : ' + receipt.shopName + pEndTag;
         htmlString = htmlString + pStartTag + 'Receipt Total : ' + receipt.totalVal + pEndTag;
     }

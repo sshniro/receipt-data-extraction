@@ -2,11 +2,25 @@ const inside = require('point-in-polygon');
 const deepcopy = require("deepcopy");
 
 function invertAxis(data, yMax) {
-    for(var i=1; i < data.textAnnotations.length; i++ ){
+    data = fillMissingValues(data);
+    for(let i=1; i < data.textAnnotations.length; i++ ){
         let v = data.textAnnotations[i].boundingPoly.vertices;
         let yArray = [];
         for(let j=0; j <4; j++){
             v[j]['y'] = (yMax - v[j]['y']);
+        }
+    }
+    return data;
+};
+
+function fillMissingValues(data) {
+    for(let i=1; i < data.textAnnotations.length; i++ ){
+        let v = data.textAnnotations[i].boundingPoly.vertices;
+        if(v['x'] == undefined){
+            v['x'] = 0;
+        }
+        if(v['y'] == undefined){
+            v['y'] = 0;
         }
     }
     return data;
