@@ -117,7 +117,7 @@ function getBigbb(mergedArray) {
         if(h2> h1) {
             h = h2
         }
-        let avgHeight = h * 0.4;
+        let avgHeight = h * 0.6;
 
         arr.push(mergedArray[i].boundingPoly.vertices[1]);
         arr.push(mergedArray[i].boundingPoly.vertices[0]);

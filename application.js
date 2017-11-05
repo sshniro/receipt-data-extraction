@@ -22,50 +22,56 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     let jsonFileName = originalFileName + '.json';
     let jsonFileLocation = 'json/' + jsonFileName;
 
-    // If the json file exists avoid doing vision detection
-    storageHelper.checkIfFileExists(jsonFileName).then((checkRes) => {
-        if(checkRes === true) {
-            storageHelper.downloadJson(jsonFileName, jsonFileLocation).then((downloadRes) => {
-                let content = fs.readFileSync(jsonFileLocation);
-                let textJson = JSON.parse(content);
+    if (fs.existsSync(jsonFileLocation)) {
+        // Do something
+        let content = fs.readFileSync(jsonFileLocation);
 
-                // let receipt = receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension);
-                // let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+        receiptProcessor.processReceipt(JSON.parse(content)[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
+            let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+            uploadResponse(res, filename, htmlData);
+        });
+    }else {
+        // If the json file exists avoid doing vision detection
+        storageHelper.checkIfFileExists(jsonFileName).then((checkRes) => {
+            if(checkRes === true) {
+                storageHelper.downloadJson(jsonFileName, jsonFileLocation).then((downloadRes) => {
+                    let content = fs.readFileSync(jsonFileLocation);
 
-                receiptProcessor.processReceipt(textJson[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-                    let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
-                    uploadResponse(res, filename, htmlData);
-                });
-            })
-        }else{
-            // else upload and save the json to google storage
-            fs.rename(filename, rename, function (err) {
-                storageHelper.uploadFile(rename).then(function (storageResponse) {
-                    console.log(storageResponse);
-                    visionHelper.getVisionText(originalFileName).then(function (visionResponse) {
-                        console.log('vision api request success. proceeding to upload the json');
-                        jsonfile.writeFile(jsonFileLocation, visionResponse, function (err) {
-                            // console.log('error in saving json file to local file system');
-                            storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
-                                console.log('json uploaded');
-                                receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-                                    let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
-                                    uploadResponse(res, rename, htmlData);
+                    receiptProcessor.processReceipt(JSON.parse(content)[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
+                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                        uploadResponse(res, filename, htmlData);
+                    });
+                })
+            }else{
+                // else upload and save the json to google storage
+                fs.rename(filename, rename, function (err) {
+                    storageHelper.uploadFile(rename).then(function (storageResponse) {
+                        console.log(storageResponse);
+                        visionHelper.getVisionText(originalFileName).then(function (visionResponse) {
+                            console.log('vision api request success. proceeding to upload the json');
+                            jsonfile.writeFile(jsonFileLocation, visionResponse, function (err) {
+                                // console.log('error in saving json file to local file system');
+                                storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
+                                    console.log('json uploaded');
+                                    receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
+                                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                                        uploadResponse(res, rename, htmlData);
+                                    });
                                 });
                             });
-                        });
-                    }).catch(function () {
-                        console.log('error occurred in the vision api text extraction');
+                        }).catch(function () {
+                            console.log('error occurred in the vision api text extraction');
+                        })
+                    }).catch(function (err) {
+                        console.log('error');
                     })
-                }).catch(function (err) {
-                    console.log('error');
-                })
-            });
+                });
 
-        }
-    }).catch((err) => {
-        console.log('error occurred while connecting the gcp bucket');
-    });
+            }
+        }).catch((err) => {
+            console.log('error occurred while connecting the gcp bucket');
+        });
+    }
 });
 
 let processReceipt = () => {
