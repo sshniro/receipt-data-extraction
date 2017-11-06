@@ -29,7 +29,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
         let content = fs.readFileSync(jsonFileLocation);
 
         receiptProcessor.processReceipt(JSON.parse(content)[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-            let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+            let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, originalFileName);
             uploadResponse(res, filename, htmlData);
         });
     }else {
@@ -40,7 +40,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                     let content = fs.readFileSync(jsonFileLocation);
 
                     receiptProcessor.processReceipt(JSON.parse(content)[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, originalFileName);
                         uploadResponse(res, filename, htmlData);
                     });
                 })
@@ -56,7 +56,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                                 storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
                                     console.log('json uploaded');
                                     receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-                                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt);
+                                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, originalFileName);
                                         uploadResponse(res, rename, htmlData);
                                     });
                                 });

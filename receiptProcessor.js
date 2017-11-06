@@ -47,7 +47,7 @@ function mergeWords(data, receiptId) {
         // This does the line segmentation based on the bounding boxes
         let finalArray = getLineWithBB(mergedArray);
 
-        let receipt = receiptHelper.generateEmptyReceipt();
+        let receipt = receiptHelper.generateEmptyReceipt(receiptId);
 
         receipt.stage1 = getLines(mergedArray);
         receipt.stage2 = finalArray;
@@ -63,6 +63,7 @@ function mergeWords(data, receiptId) {
             }else{
                 let manualReceipt = receiptHelper.createReceiptFromManualData(manualData);
                 receipt.isVerified = true;
+                receipt.manualReceipt = manualReceipt;
                 accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(manualReceipt.lineItems), receipt);
                 accuracyHelper.calculateAccuracyForShopName(receipt, manualReceipt);
                 accuracyHelper.computeReceiptAccuracy(receipt);
@@ -179,7 +180,7 @@ function getMergedLines(lines,rawText) {
     return mergedArray;
 }
 
-function generateHtmlForReceipt(receipt) {
+function generateHtmlForReceipt(receipt, receiptName) {
     let lineItemStat = receipt.lineItemStat;
     let lineItem;
     let htmlString = "";
@@ -201,9 +202,15 @@ function generateHtmlForReceipt(receipt) {
     let tdETag = '</td>';
 
     if(receipt.isVerified) {
+        let manualReceipt = receipt.manualReceipt;
+        htmlString = htmlString + pStartTag + 'Receipt Name : ' + receiptName + pEndTag;
         htmlString = htmlString + pStartTag + 'Receipt Accuracy : ' + receipt.accuracy +pEndTag;
-        htmlString = htmlString + pStartTag + 'Shop Name : ' + receipt.shopName + sep + ' accuracy : ' + receipt.shopAccuracy + pEndTag;
-        htmlString = htmlString + pStartTag + 'Receipt Total : ' + receipt.totalVal + sep + ' accuracy : ' + receipt.totalValAccuracy + pEndTag;
+        htmlString = htmlString + pStartTag + 'Identified Shop Name : ' + receipt.shopName + sep +
+            ' Real Shop Name : ' + manualReceipt.shopName + sep +
+            ' accuracy : ' + receipt.shopAccuracy + pEndTag;
+        htmlString = htmlString + pStartTag + 'Identified Receipt Total : ' + receipt.totalVal + sep +
+            ' Real Total : ' + manualReceipt.total + sep +
+            ' accuracy : ' + receipt.totalValAccuracy + pEndTag;
         htmlString = htmlString + pStartTag + 'Line Item Accuracy : ' + receipt.lineItemAccuracy + pEndTag;
     }else{
         htmlString = htmlString + pStartTag + 'Manual Data not available to compute accuracy' + pEndTag;
@@ -265,6 +272,6 @@ exports.processReceipt = function (jsonData, receiptId) {
     return extractReceiptData(jsonData, receiptId);
 };
 
-exports.generateHtmlForReceipt = function (receipt) {
-    return generateHtmlForReceipt(receipt);
+exports.generateHtmlForReceipt = function (receipt, receiptName) {
+    return generateHtmlForReceipt(receipt, receiptName);
 };

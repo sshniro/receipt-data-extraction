@@ -1,6 +1,6 @@
-function generateEmptyReceipt() {
+function generateEmptyReceipt(id) {
     let receipt = {
-        id:'',
+        id: id,
         shopName: '',
         shopAccuracy: '-',
         lineItemStat: [],
@@ -84,8 +84,8 @@ var exports = module.exports = {};
 exports.getShopName = function (lines) {
     return getShopName(lines);
 };
-exports.generateEmptyReceipt = function () {
-    return generateEmptyReceipt();
+exports.generateEmptyReceipt = function (receiptId) {
+    return generateEmptyReceipt(receiptId);
 };
 exports.regexToGetDescriptionAndPrice = function (lines) {
     return regexToGetDescriptionAndPrice(lines);
