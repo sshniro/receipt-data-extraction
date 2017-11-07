@@ -25,24 +25,15 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     console.log('started processing : ', originalFileName);
 
     if (fs.existsSync(jsonFileLocation)) {
-        // Do something
         let content = fs.readFileSync(jsonFileLocation);
-
-        receiptProcessor.processReceipt(JSON.parse(content)[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-            let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, originalFileName);
-            uploadResponse(res, filename, htmlData);
-        });
+        processReceipt(JSON.parse(content), res, fileNameWithoutExtension, originalFileName, filename);
     }else {
         // If the json file exists avoid doing vision detection
         storageHelper.checkIfFileExists(jsonFileName).then((checkRes) => {
             if(checkRes === true) {
                 storageHelper.downloadJson(jsonFileName, jsonFileLocation).then((downloadRes) => {
                     let content = fs.readFileSync(jsonFileLocation);
-
-                    receiptProcessor.processReceipt(JSON.parse(content)[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, originalFileName);
-                        uploadResponse(res, filename, htmlData);
-                    });
+                    processReceipt(JSON.parse(content), res, fileNameWithoutExtension, originalFileName, filename);
                 })
             }else{
                 // else upload and save the json to google storage
@@ -55,10 +46,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                                 // console.log('error in saving json file to local file system');
                                 storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
                                     console.log('json uploaded');
-                                    receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExtension).then((receipt) => {
-                                        let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, originalFileName);
-                                        uploadResponse(res, rename, htmlData);
-                                    });
+                                    processReceipt(visionResponse, res, fileNameWithoutExtension, originalFileName, rename);
                                 });
                             });
                         }).catch(function () {
@@ -76,7 +64,39 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
     }
 });
 
-let processReceipt = () => {
+let isReceipt = (jsonData) => {
+    if(!(jsonData[0]['responses'][0].textAnnotations === undefined)) {
+        return (jsonData[0]['responses'][0].textAnnotations.length > 3);
+    }else {
+        return false;
+    }
+};
+
+let processReceipt = (jsonData, res, fileNameWithOutExt, fileNameWithExt, imageLocation) => {
+    if(isReceipt(jsonData)){
+        receiptProcessor.processReceipt(jsonData[0]['responses'][0], fileNameWithOutExt).then((receipt) => {
+            let htmlData = receiptProcessor.generateHtmlForReceipt(receipt, fileNameWithExt);
+            uploadResponse(res, imageLocation, htmlData);
+        });
+    }else{
+        // show it is not a receipt
+        notAReceiptResponse(res, imageLocation);
+
+    }
+};
+
+let notAReceiptResponse = (res, imageFileName) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/html'
+    });
+
+    res.write('<!DOCTYPE HTML><html><head><meta charset="utf-8" /></head><body>');
+    res.write(form);
+    res.write('<img width=200 src="' + base64Image(imageFileName) + '"><br>');
+    res.write('<p>The provided image cannot be used for receipt data extraction</p>');
+    fs.unlinkSync(imageFileName);
+
+    res.end('</body></html>');
 
 };
 
