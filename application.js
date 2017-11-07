@@ -46,6 +46,7 @@ app.post('/upload', upload.single('image'), function (req, res, next) {
                                 // console.log('error in saving json file to local file system');
                                 storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
                                     console.log('json uploaded');
+                                    storageHelper.moveProcessedImageFile(originalFileName);
                                     processReceipt(visionResponse, res, fileNameWithoutExtension, originalFileName, rename);
                                 });
                             });

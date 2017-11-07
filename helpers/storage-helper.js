@@ -4,10 +4,56 @@ let storage = Storage({
     keyFilename: './configs/key.json'
 });
 const bucketName = 'kwp-image';
+const processedImageBucket = 'kwp-image-processed';
 const jsonFileBucketName = 'kwp-json';
 const processedImage = 'kwp-processed';
 
 const jsonDownloadDestination = './json/';
+
+const deleteProcessedImageFile = function (filename) {
+    storage
+        .bucket(bucketName)
+        .file(filename)
+        .delete()
+        .then(() => {
+            console.log(`gs://${bucketName}/${filename} deleted.`);
+        })
+        .catch(err => {
+            console.error('ERROR:', err);
+        });
+};
+
+const moveProcessedImageFile = function(filename){
+    console.log('initiating move and delete sequence for : ', filename);
+    storage
+        .bucket(bucketName)
+        .file(filename)
+        .copy(storage.bucket(processedImageBucket).file(filename))
+        .then(() => {
+            console.log(
+                `gs://${bucketName}/${filename} copied to gs://${processedImageBucket}/${filename}.`
+            );
+            deleteProcessedImageFile(filename);
+        })
+        .catch(err => {
+            console.error('ERROR:', err);
+        });
+};
+
+const copyImage = function(filename){
+    storage
+        .bucket(bucketName)
+        .file(filename)
+        .copy(storage.bucket(processedImageBucket).file(filename))
+        .then(() => {
+            console.log(
+                `gs://${bucketName}/${filename} copied to gs://${processedImageBucket}/${filename}.`
+            );
+        })
+        .catch(err => {
+            console.error('ERROR:', err);
+        });
+};
 
 const uploadFile = function (fileName, bucketName) {
     return new Promise(function (resolve, reject) {
@@ -83,6 +129,10 @@ exports.uploadJsonFile = function (fileName) {
 
 exports.checkIfFileExists = function (fileName) {
     return checkIfFileExists(fileName);
+};
+
+exports.moveProcessedImageFile = function (fileName) {
+    return moveProcessedImageFile(fileName);
 };
 
 exports.downloadJson = function (fileName, destinationFilename) {
