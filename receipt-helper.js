@@ -26,7 +26,7 @@ function getShopName(lines) {
 
     let status = false;
     let line;
-    let shopName = null;
+    let shopName = '';
 
     for(let i=0; i < shopIdentifier.length; i++){
         if(!status){

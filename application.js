@@ -14,6 +14,9 @@ const receiptProcessor = require('./receiptProcessor');
 
 const app = express();
 
+var isBatchProcessing = false;
+var remainingFile = 0;
+
 app.post('/upload', upload.single('image'), function (req, res, next) {
     let filename = req.file.path;
     let rename = 'uploads/' + req.file.originalname;
@@ -120,6 +123,43 @@ let uploadResponse = (res, imageFileName, data) => {
     res.end('</body></html>');
 
 };
+
+// setTimeout(function(){
+    // startBatchProcessing();
+    // }, 500);
+
+
+function startBatchProcessing() {
+    if(remainingFile === 0){
+        storageHelper.getAllFiles().then((files) => {
+            remainingFile = files.length;
+            files.forEach(file => {
+                let fileName = file.name;
+                let jsonFileName = fileName + '.json';
+                let jsonFileLocation = 'json/' + jsonFileName;
+
+                visionHelper.getVisionText(fileName).then(function (visionResponse) {
+                    console.log('vision api request success. proceeding to upload the json');
+                    jsonfile.writeFile(jsonFileLocation, visionResponse, function (err) {
+                        // console.log('error in saving json file to local file system');
+                        storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
+                            console.log('json uploaded');
+                            // check if receipt/ if not move the receipt
+                            receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileName).then((receipt) => {
+                                remainingFile = remainingFile - 1;
+                                console.log('moving processed image');
+                                storageHelper.moveProcessedImageFile(fileName);
+                            });
+                        });
+                    });
+                }).catch(function () {
+                    console.log('error occurred in the vision api text extraction');
+                })
+            });
+        })
+    }
+}
+
 
 let prepareHtmlStatData = (data) => {
     return JSON.stringify(data[0]['responses'][0]['fullTextAnnotation']['text']);

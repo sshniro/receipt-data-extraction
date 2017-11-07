@@ -10,6 +10,35 @@ const processedImage = 'kwp-processed';
 
 const jsonDownloadDestination = './json/';
 
+const deleteAllFiles = function (bucketN) {
+    storage
+        .bucket(bucketN)
+        .getFiles()
+        .then(results => {
+            const files = results[0];
+            files.forEach(filename => {
+                console.log('file name is', filename.name);
+                storage
+                    .bucket(bucketN)
+                    .file(filename.name)
+                    .delete()
+                    .then(() => {
+                        console.log(`gs://${bucketN}/${filename.name} deleted.`);
+                    })
+                    .catch(err => {
+                        console.error('ERROR:', err);
+                    });
+            });
+        })
+        .catch(err => {
+            console.log(err);
+        });
+
+};
+
+// deleteAllFiles(jsonFileBucketName);
+// deleteAllFiles(bucketName);
+
 const deleteProcessedImageFile = function (filename) {
     storage
         .bucket(bucketName)
@@ -93,6 +122,22 @@ const downloadJson = function (srcFilename, destinationFilename) {
     })
 };
 
+const getAllFiles = function () {
+    return new Promise((resolve, reject) => {
+        let status = false;
+        storage
+            .bucket('kwp-sample')
+            .getFiles()
+            .then(results => {
+                const files = results[0];
+                resolve(files);
+            })
+            .catch(err => {
+                reject(err);
+            });
+    })
+};
+
 const checkIfFileExists = function (jsonFileName) {
     return new Promise((resolve, reject) => {
         let status = false;
@@ -133,6 +178,10 @@ exports.checkIfFileExists = function (fileName) {
 
 exports.moveProcessedImageFile = function (fileName) {
     return moveProcessedImageFile(fileName);
+};
+
+exports.getAllFiles = function () {
+    return getAllFiles();
 };
 
 exports.downloadJson = function (fileName, destinationFilename) {
