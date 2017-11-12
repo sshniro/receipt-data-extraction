@@ -5,45 +5,46 @@ var visionClient = vision({
     keyFilename: './configs/key.json'
 });
 
-const getVisionText = function (fileName) {
+const getVisionText = function (fileName, bucketN) {
 
-    var gcsImageUri = 'gs://kwp-image/' + fileName;
-    var source = {
+    let gcsImageUri = 'gs://kwp-image/' + fileName;
+
+    if(bucketN) {
+        gcsImageUri = 'gs://' + bucketN + '/' + fileName;
+    }
+    let source = {
         gcsImageUri : gcsImageUri
     };
-    var image = {
+    let image = {
         source : source
     };
-    var type = vision.v1.types.Feature.Type.TEXT_DETECTION;
-    var featuresElement = {
+    let type = vision.v1.types.Feature.Type.TEXT_DETECTION;
+    let featuresElement = {
         type : type , maxResults : 50
     };
-    var features = [featuresElement];
-    var requestsElement = {
+    let features = [featuresElement];
+    let requestsElement = {
         image : image,
         features : features,
         imageContext : {languageHints:['en']}
     };
 // {cropHintsParams: {aspectRatios: [0.8, 1, 1.2]}}
-    var requests = [requestsElement];
-
-    console.log('vision request object', requests);
+    let requests = [requestsElement];
 
     return new Promise(function (resolve, reject) {
         visionClient.batchAnnotateImages({requests: requests}).then(function(responses) {
-            console.log(responses[0]);
+            // console.log(responses[0]);
             resolve(responses);
         })
         .catch(function(err) {
             reject(err);
         });
-
     })
 };
 
 
 var exports = module.exports = {};
 
-exports.getVisionText = function (fileName) {
-    return getVisionText(fileName);
+exports.getVisionText = function (fileName, bucketN) {
+    return getVisionText(fileName, bucketN);
 };

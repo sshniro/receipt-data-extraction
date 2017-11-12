@@ -6,6 +6,7 @@ let storage = Storage({
 const bucketName = 'kwp-image';
 const processedImageBucket = 'kwp-image-processed';
 const jsonFileBucketName = 'kwp-json';
+const jsonResultsBucketName = 'kwp-json-results';
 const processedImage = 'kwp-processed';
 
 const jsonDownloadDestination = './json/';
@@ -122,11 +123,11 @@ const downloadJson = function (srcFilename, destinationFilename) {
     })
 };
 
-const getAllFiles = function () {
+const getAllFiles = function (bucketN) {
     return new Promise((resolve, reject) => {
         let status = false;
         storage
-            .bucket('kwp-sample')
+            .bucket(bucketN)
             .getFiles()
             .then(results => {
                 const files = results[0];
@@ -172,6 +173,10 @@ exports.uploadJsonFile = function (fileName) {
     return uploadFile(fileName, jsonFileBucketName);
 };
 
+exports.uploadJsonAccuracyFile = function (fileName) {
+    return uploadFile(fileName, jsonResultsBucketName);
+};
+
 exports.checkIfFileExists = function (fileName) {
     return checkIfFileExists(fileName);
 };
@@ -180,8 +185,8 @@ exports.moveProcessedImageFile = function (fileName) {
     return moveProcessedImageFile(fileName);
 };
 
-exports.getAllFiles = function () {
-    return getAllFiles();
+exports.getAllFiles = function (bucketN) {
+    return getAllFiles(bucketN);
 };
 
 exports.downloadJson = function (fileName, destinationFilename) {

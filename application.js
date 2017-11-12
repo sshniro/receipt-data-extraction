@@ -7,6 +7,7 @@ const mime = require('mime');
 const multer = require('multer');
 const upload = multer({dest: 'uploads/'});
 const jsonfile = require('jsonfile');
+const deepcopy = require("deepcopy");
 
 const visionHelper = require('./helpers/vision-helper');
 const storageHelper = require('./helpers/storage-helper');
@@ -14,8 +15,10 @@ const receiptProcessor = require('./receiptProcessor');
 
 const app = express();
 
-var isBatchProcessing = false;
 var remainingFile = 0;
+var batchProcessId = 0;
+var batchProcessResults = [];
+var batchProcessFullResults = [];
 
 app.post('/upload', upload.single('image'), function (req, res, next) {
     let filename = req.file.path;
@@ -124,41 +127,111 @@ let uploadResponse = (res, imageFileName, data) => {
 
 };
 
-// setTimeout(function(){
-    // startBatchProcessing();
-    // }, 500);
 
+// setInterval(function(){
+//     startBatchProcessing()
+// }, 5000);
+
+let runOnce = true;
+let sampleBucktN = 'kwp-sample-mobile';
+
+// startBatchProcessing();
 
 function startBatchProcessing() {
-    if(remainingFile === 0){
-        storageHelper.getAllFiles().then((files) => {
-            remainingFile = files.length;
-            files.forEach(file => {
-                let fileName = file.name;
-                let jsonFileName = fileName + '.json';
-                let jsonFileLocation = 'json/' + jsonFileName;
+    console.log('interval check remaining files ', remainingFile);
+    console.log('interval accuracy results ', batchProcessResults);
 
-                visionHelper.getVisionText(fileName).then(function (visionResponse) {
-                    console.log('vision api request success. proceeding to upload the json');
-                    jsonfile.writeFile(jsonFileLocation, visionResponse, function (err) {
-                        // console.log('error in saving json file to local file system');
-                        storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
-                            console.log('json uploaded');
-                            // check if receipt/ if not move the receipt
-                            receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileName).then((receipt) => {
+    jsonfile.writeFile('json/accuracy' + batchProcessId + '.json', batchProcessResults, function (err) {
+        console.log('writing the intermediate file');
+    });
+
+    if(remainingFile === 0 && runOnce){
+        if(batchProcessResults.length !== 0) {
+            runOnce = false;
+            console.log('batch process ended, initiating upload sequence');
+            uploadBatchProcessResults(deepcopy(batchProcessResults), deepcopy(batchProcessFullResults), deepcopy(batchProcessId)).then(() =>{
+                console.log('results are uploaded');
+            })
+        }
+
+        if(runOnce){
+            storageHelper.getAllFiles(sampleBucktN).then((files) => {
+
+                remainingFile = files.length;
+                batchProcessResults = [];
+                batchProcessFullResults = [];
+                batchProcessId += 1;
+
+                files.forEach(file => {
+                    let fileName = file.name;
+                    let jsonFileName = fileName + '.json';
+                    let jsonFileLocation = 'json/' + jsonFileName;
+                    let fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+
+                    if (fs.existsSync(jsonFileLocation)) {
+                        console.log(jsonFileLocation + ' found in cache')
+                        let content = JSON.parse(fs.readFileSync(jsonFileLocation));
+                        if(isReceipt(content)){
+                            receiptProcessor.processReceipt(content[0]['responses'][0], fileNameWithoutExt).then((receipt) => {
+                                batchProcessResults.push({id: fileNameWithoutExt, accuracy: receipt.accuracy});
+                                batchProcessFullResults.push(receipt);
                                 remainingFile = remainingFile - 1;
-                                console.log('moving processed image');
-                                storageHelper.moveProcessedImageFile(fileName);
+                                console.log('Finished processing image . Remaining file count is : ', remainingFile);
                             });
-                        });
-                    });
-                }).catch(function () {
-                    console.log('error occurred in the vision api text extraction');
-                })
-            });
-        })
+                        }else{
+                            batchProcessResults.push({id: fileNameWithoutExt, accuracy: 0})
+                            remainingFile = remainingFile - 1;
+                            console.log('File : ' + fileNameWithoutExt + ' cannot be processed. Remaining files are : ' + remainingFile);
+                        }
+                    }else {
+                        visionHelper.getVisionText(fileName, sampleBucktN).then(function (visionResponse) {
+                            // console.log('vision api request success. proceeding to upload the json');
+                            jsonfile.writeFile(jsonFileLocation, visionResponse, function (err) {
+                                // console.log('error in saving json file to local file system');
+                                // storageHelper.uploadJsonFile(jsonFileLocation).then(() => {
+                                // console.log('json uploaded');
+                                // storageHelper.moveProcessedImageFile(fileName);
+                                // check if receipt/ if not move the receipt
+                                // remainingFile = remainingFile + 1;
+                                // console.log('Started processing ' + fileNameWithoutExt + 'remaining files are :' + remainingFile);
+                                if(isReceipt(visionResponse)){
+                                    receiptProcessor.processReceipt(visionResponse[0]['responses'][0], fileNameWithoutExt).then((receipt) => {
+                                        batchProcessResults.push({id: fileNameWithoutExt, accuracy: receipt.accuracy});
+                                        batchProcessFullResults.push(receipt);
+                                        remainingFile = remainingFile - 1;
+                                        console.log('Finished processing image . Remaining file count is : ', remainingFile);
+                                    });
+                                }else{
+                                    batchProcessResults.push({id: fileNameWithoutExt, accuracy: 0})
+                                    remainingFile = remainingFile - 1;
+                                    console.log('File : ' + fileNameWithoutExt + ' cannot be processed. Remaining files are : ' + remainingFile);
+                                }
+                                // });
+                            });
+                        }).catch(function () {
+                            console.log('error occurred in the vision api text extraction');
+                        })
+
+                    }
+
+                });
+            })
+
+        }
     }
 }
+
+const uploadBatchProcessResults = function (accuracyResults, FullResults, batchID) {
+    return new Promise((resolve, reject) => {
+        let jsonAccuracyLocation = 'json/accuracy' + batchID + '.json';
+        jsonfile.writeFile('json/accuracy' + batchID + '.json', accuracyResults, function (err) {
+            storageHelper.uploadJsonAccuracyFile(jsonAccuracyLocation).then(() => {
+                console.log('results uploaded');
+                resolve('success');
+            });
+        });
+    });
+};
 
 
 let prepareHtmlStatData = (data) => {
