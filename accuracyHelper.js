@@ -37,6 +37,9 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
         let pricePercentage = Math.round(((priceLen - priceScore) / priceLen)*100);
 
         if(descPercentage > 40){
+            if(pricePercentage < 0) {
+                pricePercentage = 0;
+            }
             let statLineItem = {
                 real : deepcopy(realLineItems[index]),
                 ocr : ocrLineItems[i] ,
