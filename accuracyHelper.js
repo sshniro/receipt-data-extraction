@@ -70,8 +70,8 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
 }
 
 function computeLineItemAccuracyWithWeights(descPercentage, pricePercentage) {
-    let descW = 0.90;
-    let priceW = 0.10;
+    let descW = 0.70;
+    let priceW = 0.30;
 
     return Math.round((descPercentage * descW) + (pricePercentage * priceW))
 }

@@ -51,29 +51,35 @@ function getShopName(lines) {
     return shopName;
 }
 
-function regexToGetDescriptionAndPrice(lines) {
+function regexToGetDescriptionAndPrice(lines, isAzure) {
     let lineItemList = [];
     let priceRegex = /^\d+\.\d{2}/;
     let currencyPriceRegex = /(^)(£|€|\$)(\d+\.\d{2})/;
 
-    lines = removeUnwantedLineItems(lines);
-
-    lines = removeLineWithOnlyPrice(lines, priceRegex);
-    lines = removeLineWithOnlyPrice(lines, currencyPriceRegex);
-
-    // let lineNumberList = [];
-    // let firstFound = false;
-    // let first = 0;
-    // let last = 0;
-    // let lineItem = {desc: "", price: ""};
+    if(isAzure) {
+    }else{
+        lines = removeUnwantedLineItems(lines);
+        lines = removeLineWithOnlyPrice(lines, priceRegex);
+        lines = removeLineWithOnlyPrice(lines, currencyPriceRegex);
+    }
 
     for(let i=0; i < lines.length; i++) {
         let line = lines[i];
         let match = /(.+)(£|€|\$)(\d+\.\d{2})/.exec(line);
+        if(isAzure) {
+            match = /(.+)(.\d{2})/.exec(line);
+        }
         if(match !== null) {
-            lineItemList.push({desc: match[1], price: match[3]})
+            if(isAzure) {
+                lineItemList.push({desc: match[1], price: match[2]})
+            }else{
+                lineItemList.push({desc: match[1], price: match[3]})
+            }
         }else{
-            lineItemList.push({desc: line, price: '0'})
+            if(isAzure){
+            }else{
+                lineItemList.push({desc: line, price: '0'})
+            }
         }
     }
     return lineItemList;
@@ -212,8 +218,8 @@ exports.getShopName = function (lines) {
 exports.generateEmptyReceipt = function (receiptId) {
     return generateEmptyReceipt(receiptId);
 };
-exports.regexToGetDescriptionAndPrice = function (lines) {
-    return regexToGetDescriptionAndPrice(lines);
+exports.regexToGetDescriptionAndPrice = function (lines, isAzure) {
+    return regexToGetDescriptionAndPrice(lines, isAzure);
 };
 exports.createReceiptFromManualData = function (lineItemsArray) {
     return createReceiptFromManualData(lineItemsArray);

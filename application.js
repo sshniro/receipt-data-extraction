@@ -130,12 +130,70 @@ let uploadResponse = (res, imageFileName, data) => {
 
 // setInterval(function(){
 //     startBatchProcessing()
-// }, 5000);
+// }, 10000);
+
+setInterval(function(){
+    startBatchProcessingToAzure()
+}, 10000);
 
 let runOnce = true;
-let sampleBucktN = 'kwp-sample-mobile';
+let sampleBucktN = 'kwp-sample-mobile-100';
+let azureBucketName = 'kwp-azure-json';
 
 // startBatchProcessing();
+startBatchProcessingToAzure();
+
+function startBatchProcessingToAzure() {
+
+    console.log('interval check for azure remaining files ', remainingFile);
+    console.log('interval for azure  accuracy results ', batchProcessResults);
+
+    jsonfile.writeFile('json/accuracy' + batchProcessId + '.json', batchProcessResults, function (err) {
+        console.log('writing the intermediate file');
+    });
+
+    if(remainingFile === 0 && runOnce){
+
+        if(batchProcessResults.length !== 0) {
+            runOnce = false;
+            // console.log('batch process ended, initiating upload sequence');
+            // uploadBatchProcessResults(deepcopy(batchProcessResults), deepcopy(batchProcessFullResults), deepcopy(batchProcessId)).then(() =>{
+            //     console.log('results are uploaded');
+            // })
+
+        }
+
+        storageHelper.getAllFiles(azureBucketName).then((files) => {
+
+            remainingFile = files.length;
+            batchProcessResults = [];
+            batchProcessFullResults = [];
+            batchProcessId += 1;
+
+            files.forEach(file => {
+
+                let fileName = file.name;
+                let jsonFileLocation = 'json/' + fileName;
+
+                storageHelper.downloadJson(fileName, jsonFileLocation).then((downloadRes) => {
+                    let content = fs.readFileSync(jsonFileLocation);
+                    let imageData = JSON.parse(content);
+
+                    let imageName = imageData.id;
+                    let lines = imageData.lines;
+
+                    let fileNameWithoutExt = imageName.substring(0, imageName.lastIndexOf('.'));
+
+                    receiptProcessor.calculateAccuracyForAzure(fileNameWithoutExt, lines).then((receipt) => {
+                        batchProcessResults.push({id: fileNameWithoutExt, accuracy: receipt.accuracy});
+                        batchProcessFullResults.push(receipt);
+                        remainingFile = remainingFile - 1;
+                    });
+                })
+            });
+        });
+    }
+}
 
 function startBatchProcessing() {
     console.log('interval check remaining files ', remainingFile);

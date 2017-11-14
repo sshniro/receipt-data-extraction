@@ -5,12 +5,12 @@ const saintsCollectionName = 'sainsbury';
 const url = 'mongodb://localhost:27017/kwp';
 
 // Use connect method to connect to the Server
-let saveReceipt = function (receipt) {
+let saveReceipt = function (receipt, collectionName) {
     return new Promise(function (resolve, reject) {
         MongoClient.connect(url, function (err, db) {
-            let collection = db.collection('ocr');
+            let collection = db.collection(collectionName);
             collection.insert(receipt, function (err, result) {
-                console.log('inserted the receipt');
+                // console.log('inserted the receipt');
                 if(err === null) {
                     resolve(result);
                 }
@@ -75,8 +75,8 @@ function createReceipt(lineItemsArray) {
 
 var exports = module.exports = {};
 
-exports.saveReceipt = function (receipt) {
-    return saveReceipt(receipt);
+exports.saveReceipt = function (receipt, collectionName) {
+    return saveReceipt(receipt, collectionName);
 };
 
 exports.getManualReceipt = function (receiptId) {
