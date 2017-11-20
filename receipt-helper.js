@@ -51,6 +51,34 @@ function getShopName(lines) {
     return shopName;
 }
 
+function identifyTotal(line, totalIdentifier, regex, indexToReturn) {
+
+    let rgxp = new RegExp(totalIdentifier, 'i');
+    let result = line.match(rgxp);
+    if(result){
+        let match = regex.exec(line);
+        if(match !== null) {
+            return match[indexToReturn];
+        }
+    }
+}
+
+function getTotal(lines) {
+
+    for (let i=0; i< lines.length; i++){
+        let regex = /(.+)(£|€|\$)(\d+\.\d{2})/;
+        let total1 = identifyTotal(lines[i], 'balance due', regex, 3);
+        regex = /(.+)(\s)(\d+\.\d{2})/;
+        let total2 = identifyTotal(lines[i], 'total to pay', regex, 3);
+
+        if(total1) {
+            return total1;
+        }else if(total2) {
+            return total2;
+        }
+    }
+}
+
 function regexToGetDescriptionAndPrice(lines, isAzure) {
     let lineItemList = [];
     let priceRegex = /^\d+\.\d{2}/;
@@ -214,6 +242,9 @@ var exports = module.exports = {};
 
 exports.getShopName = function (lines) {
     return getShopName(lines);
+};
+exports.getTotal = function (lines) {
+    return getTotal(lines);
 };
 exports.generateEmptyReceipt = function (receiptId) {
     return generateEmptyReceipt(receiptId);

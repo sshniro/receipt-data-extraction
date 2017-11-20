@@ -54,7 +54,8 @@ function mergeWords(data, receiptId) {
 
 
         receipt.shopName = receiptHelper.getShopName(finalArray);
-        let itemList = receiptHelper.regexToGetDescriptionAndPrice(finalArray);
+        receipt.totalVal = receiptHelper.getTotal(finalArray);
+        let itemList = receiptHelper.regexToGetDescriptionAndPrice(deepcopy(finalArray));
 
         mongoHelper.getManualReceipt(receiptId).then((manualData) => {
             if(manualData.length === 0){
@@ -66,6 +67,7 @@ function mergeWords(data, receiptId) {
                 receipt.manualReceipt = manualReceipt;
                 accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(manualReceipt.lineItems), receipt);
                 accuracyHelper.calculateAccuracyForShopName(receipt, manualReceipt);
+                accuracyHelper.calculateAccuracyTotalVal(receipt, manualReceipt);
                 accuracyHelper.computeReceiptAccuracy(receipt);
             }
             resolve(receipt);

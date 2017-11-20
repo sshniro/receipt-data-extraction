@@ -128,20 +128,20 @@ let uploadResponse = (res, imageFileName, data) => {
 };
 
 
-// setInterval(function(){
-//     startBatchProcessing()
-// }, 10000);
-
 setInterval(function(){
-    startBatchProcessingToAzure()
+    startBatchProcessing()
 }, 10000);
+//
+// setInterval(function(){
+//     startBatchProcessingToAzure()
+// }, 10000);
 
 let runOnce = true;
 let sampleBucktN = 'kwp-sample-mobile-100';
 let azureBucketName = 'kwp-azure-json';
 
-// startBatchProcessing();
-startBatchProcessingToAzure();
+startBatchProcessing();
+// startBatchProcessingToAzure();
 
 function startBatchProcessingToAzure() {
 
@@ -160,38 +160,39 @@ function startBatchProcessingToAzure() {
             // uploadBatchProcessResults(deepcopy(batchProcessResults), deepcopy(batchProcessFullResults), deepcopy(batchProcessId)).then(() =>{
             //     console.log('results are uploaded');
             // })
-
         }
 
-        storageHelper.getAllFiles(azureBucketName).then((files) => {
+        if(runOnce){
+            storageHelper.getAllFiles(azureBucketName).then((files) => {
 
-            remainingFile = files.length;
-            batchProcessResults = [];
-            batchProcessFullResults = [];
-            batchProcessId += 1;
+                remainingFile = files.length;
+                batchProcessResults = [];
+                batchProcessFullResults = [];
+                batchProcessId += 1;
 
-            files.forEach(file => {
+                files.forEach(file => {
 
-                let fileName = file.name;
-                let jsonFileLocation = 'json/' + fileName;
+                    let fileName = file.name;
+                    let jsonFileLocation = 'json/' + fileName;
 
-                storageHelper.downloadJson(fileName, jsonFileLocation).then((downloadRes) => {
-                    let content = fs.readFileSync(jsonFileLocation);
-                    let imageData = JSON.parse(content);
+                    storageHelper.downloadJson(fileName, jsonFileLocation).then((downloadRes) => {
+                        let content = fs.readFileSync(jsonFileLocation);
+                        let imageData = JSON.parse(content);
 
-                    let imageName = imageData.id;
-                    let lines = imageData.lines;
+                        let imageName = imageData.id;
+                        let lines = imageData.lines;
 
-                    let fileNameWithoutExt = imageName.substring(0, imageName.lastIndexOf('.'));
+                        let fileNameWithoutExt = imageName.substring(0, imageName.lastIndexOf('.'));
 
-                    receiptProcessor.calculateAccuracyForAzure(fileNameWithoutExt, lines).then((receipt) => {
-                        batchProcessResults.push({id: fileNameWithoutExt, accuracy: receipt.accuracy});
-                        batchProcessFullResults.push(receipt);
-                        remainingFile = remainingFile - 1;
-                    });
-                })
+                        receiptProcessor.calculateAccuracyForAzure(fileNameWithoutExt, lines).then((receipt) => {
+                            batchProcessResults.push({id: fileNameWithoutExt, accuracy: receipt.accuracy});
+                            batchProcessFullResults.push(receipt);
+                            remainingFile = remainingFile - 1;
+                        });
+                    })
+                });
             });
-        });
+        }
     }
 }
 
@@ -310,8 +311,8 @@ app.get('/', function(req, res) {
     res.end(form);
 });
 
-app.listen(8080);
-console.log('Server Started on port 8080');
+app.listen(8090);
+console.log('Server Started on port 8090');
 
 function base64Image(src) {
     let data = fs.readFileSync(src).toString('base64');

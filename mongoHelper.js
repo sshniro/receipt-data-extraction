@@ -2,7 +2,9 @@ const MongoClient = require('mongodb').MongoClient;
 const tescoCollectionName = 'tesco';
 const saintsCollectionName = 'sainsbury';
 // Connection URL
-const url = 'mongodb://localhost:27017/kwp';
+// const url = 'mongodb://localhost:27017/kwp';
+const url = 'mongodb://kwp2:kwp2@35.184.131.227:27017/kwp';
+// const url = 'mongodb://35.184.131.227:27017/kwp';
 
 // Use connect method to connect to the Server
 let saveReceipt = function (receipt, collectionName) {

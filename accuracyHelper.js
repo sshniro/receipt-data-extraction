@@ -11,6 +11,24 @@ function calculateAccuracyForShopName(receipt, manualReceipt) {
     return receipt;
 }
 
+function calculateAccuracyTotalVal(receipt, manualReceipt) {
+    if(receipt.totalVal === '-' || receipt.totalVal === undefined){
+        receipt.totalVal = '-';
+        receipt.totalValAccuracy = 0;
+        return receipt;
+    }
+
+    let price = parseFloat(manualReceipt.total).toString();
+    let distance = levenshtein.get(price, receipt.totalVal.toString());
+
+    let priceLen = receipt.totalVal.length;
+    let pricePercentage = Math.round(((priceLen - distance) / priceLen)*100);
+
+    receipt.totalValAccuracy = pricePercentage;
+
+    return receipt;
+}
+
 // TODO remove * from the description
 function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt) {
     let lineItemStat = [];
@@ -96,7 +114,7 @@ function computeReceiptAccuracy(receipt) {
 
     accuracy = Math.round(receipt.lineItemAccuracy * lineItemWeight);
     accuracy = accuracy + Math.round(receipt.shopAccuracy * shopNameWeight);
-    // Math.round(receipt.totalValAccuracy * totalValWeight);
+    Math.round(receipt.totalValAccuracy * totalValWeight);
     receipt.accuracy = accuracy;
 }
 
@@ -108,6 +126,10 @@ exports.calculateAccuracyForLineItems = function (ocrLineItems, realLineItemsClo
 
 exports.calculateAccuracyForShopName = function (receipt, manualReceipt) {
     return calculateAccuracyForShopName(receipt, manualReceipt);
+};
+
+exports.calculateAccuracyTotalVal = function (receipt, manualReceipt) {
+    return calculateAccuracyTotalVal(receipt, manualReceipt);
 };
 
 exports.computeReceiptAccuracy = function (receipt) {
