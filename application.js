@@ -128,17 +128,19 @@ let uploadResponse = (res, imageFileName, data) => {
 };
 
 
-setInterval(function(){
-    startBatchProcessing()
-}, 10000);
-//
-// setInterval(function(){
-//     startBatchProcessingToAzure()
-// }, 10000);
 
 let runOnce = true;
 let sampleBucktN = 'kwp-sample-mobile-100';
 let azureBucketName = 'kwp-azure-json';
+
+setInterval(function(){
+    startBatchProcessing()
+}, 10000);
+
+// setInterval(function(){
+//     startBatchProcessingToAzure()
+// }, 10000);
+//
 
 startBatchProcessing();
 // startBatchProcessingToAzure();

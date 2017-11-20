@@ -82,7 +82,10 @@ function calculateAccuracyForAzure(receiptId, lines) {
     return new Promise((resolve, reject) => {
         let receipt = receiptHelper.generateEmptyReceipt(receiptId);
         receipt.shopName = receiptHelper.getShopName(lines);
+        receipt.totalVal = receiptHelper.getTotal(lines);
         let itemList = receiptHelper.regexToGetDescriptionAndPrice(lines, true);
+
+        receipt.stage1 = lines;
 
         mongoHelper.getManualReceipt(receiptId).then((manualData) => {
             if(manualData.length === 0){
@@ -94,6 +97,7 @@ function calculateAccuracyForAzure(receiptId, lines) {
                 receipt.manualReceipt = manualReceipt;
                 accuracyHelper.calculateAccuracyForLineItems(deepcopy(itemList), deepcopy(manualReceipt.lineItems), receipt);
                 accuracyHelper.calculateAccuracyForShopName(receipt, manualReceipt);
+                accuracyHelper.calculateAccuracyTotalVal(receipt, manualReceipt);
                 accuracyHelper.computeReceiptAccuracy(receipt);
             }
             resolve(receipt);

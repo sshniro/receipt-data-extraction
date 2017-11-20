@@ -65,6 +65,7 @@ function calculateAccuracyForLineItems(ocrLineItems, realLineItemsClone, receipt
                 priceAccuracy : pricePercentage,
                 accuracy : computeLineItemAccuracyWithWeights(descPercentage, pricePercentage)
             };
+            statLineItem.real.price = statLineItem.real.price.toFixed(2);
             lineItemStat.push(statLineItem);
             realLineItems.splice(index, 1);
         }
@@ -114,7 +115,7 @@ function computeReceiptAccuracy(receipt) {
 
     accuracy = Math.round(receipt.lineItemAccuracy * lineItemWeight);
     accuracy = accuracy + Math.round(receipt.shopAccuracy * shopNameWeight);
-    Math.round(receipt.totalValAccuracy * totalValWeight);
+    accuracy = accuracy + Math.round(receipt.totalValAccuracy * totalValWeight);
     receipt.accuracy = accuracy;
 }
 
